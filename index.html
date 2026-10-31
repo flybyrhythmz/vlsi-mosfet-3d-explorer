@@ -1,0 +1,2381 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VLSI & MOSFET 3D Interactive Lab: Physics, Exact Fabrication & Industry Comparison</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              100: '#e0e7ff',
+              400: '#818cf8',
+              500: '#6366f1',
+              600: '#4f46e5',
+              900: '#1e1b4b'
+            },
+            silicon: '#334155',
+            oxide: '#0284c7',
+            poly: '#d97706',
+            ndiff: '#10b981',
+            pdiff: '#ec4899',
+            metal: '#94a3b8'
+          }
+        }
+      }
+    }
+  </script>
+  <!-- Three.js & Controls -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1"></script>
+  <style>
+    /* Custom Scrollbar & Aesthetics */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #0f172a; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #475569; }
+    .canvas-container { position: relative; width: 100%; height: 100%; min-height: 440px; }
+    .glass-panel {
+      background: rgba(15, 23, 42, 0.88);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(51, 65, 85, 0.65);
+    }
+    input[type=range] {
+      accent-color: #6366f1;
+    }
+    .flow-arrow {
+      animation: pulseGlow 1.8s infinite ease-in-out;
+    }
+    @keyframes pulseGlow {
+      0%, 100% { opacity: 0.6; transform: scale(1); }
+      50% { opacity: 1; transform: scale(1.05); }
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 font-sans min-h-screen flex flex-col antialiased selection:bg-indigo-500 selection:text-white">
+
+  <!-- Top Header Navigation -->
+  <header class="border-b border-slate-800 bg-slate-900/90 backdrop-blur sticky top-0 z-50 px-4 py-2.5 flex flex-wrap items-center justify-between gap-3">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 via-sky-500 to-emerald-400 flex items-center justify-center shadow-lg shadow-indigo-500/20 flex-shrink-0">
+        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"/>
+        </svg>
+      </div>
+      <div>
+        <div class="flex items-center gap-2">
+          <h1 class="text-base sm:text-lg font-bold text-white tracking-tight">VLSI & MOSFET 3D Interactive Lab</h1>
+          <span class="text-[10px] px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 font-mono border border-indigo-500/30 font-semibold">Semiconductor Foundry EDA</span>
+        </div>
+        <p class="text-[11px] text-slate-400">Carrier Drift Dynamics, Exact 12-Step Foundry Process, Fabrication Types & Industry Benchmarking</p>
+      </div>
+    </div>
+
+    <!-- Mode Selector Tabs -->
+    <nav class="flex items-center gap-1 bg-slate-950/80 p-1 rounded-xl border border-slate-800 flex-wrap" id="mainTabs">
+      <button data-tab="mosfet" class="tab-btn px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all bg-indigo-600 text-white shadow-sm flex items-center gap-1.5">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+        <span>3D MOSFET Physics</span>
+      </button>
+      <button data-tab="fabrication" class="tab-btn px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 flex items-center gap-1.5">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+        <span>3D Fab Stepper</span>
+      </button>
+      <button data-tab="fabtypes" class="tab-btn px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 flex items-center gap-1.5">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+        <span>Fab Types & Industry Matrix</span>
+      </button>
+      <button data-tab="cmos" class="tab-btn px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 flex items-center gap-1.5">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+        <span>3D CMOS Inverter</span>
+      </button>
+      <button data-tab="energy" class="tab-btn px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 flex items-center gap-1.5">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"/></svg>
+        <span>Energy Bands</span>
+      </button>
+      <button data-tab="theory" class="tab-btn px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 flex items-center gap-1.5">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+        <span>VLSI Theory & Quiz</span>
+      </button>
+    </nav>
+  </header>
+
+  <!-- Main Viewport Container -->
+  <main class="flex-1 flex flex-col lg:flex-row overflow-hidden relative">
+
+    <!-- 3D Canvas Container (Primary Visual Area) -->
+    <section class="flex-1 relative flex flex-col bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 min-h-[460px]">
+      
+      <!-- Top Canvas Controls & HUD Overlay -->
+      <div class="absolute top-3 left-3 right-3 z-10 flex flex-wrap items-center justify-between pointer-events-none gap-2">
+        <!-- 3D Scene Status Badge -->
+        <div class="pointer-events-auto flex items-center gap-2 bg-slate-900/90 border border-slate-700/80 px-3 py-1.5 rounded-xl shadow-lg backdrop-blur">
+          <div class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></div>
+          <span id="sceneTitle" class="text-xs font-semibold text-slate-200">MOSFET 3D Cutaway: Field, Charge & Current Flow</span>
+          <span id="activeModeBadge" class="text-[10px] px-2 py-0.5 rounded font-mono font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">LINEAR / TRIODE</span>
+        </div>
+
+        <!-- Camera Views & Viewport Helpers -->
+        <div class="pointer-events-auto flex items-center gap-1.5 bg-slate-900/90 border border-slate-700/80 p-1 rounded-xl shadow-lg backdrop-blur text-xs">
+          <button id="camIso" class="px-2.5 py-1 rounded-lg bg-indigo-600/30 text-indigo-300 hover:bg-indigo-600/50 transition">Iso 3D</button>
+          <button id="camTop" class="px-2.5 py-1 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition">Top Layout</button>
+          <button id="camSide" class="px-2.5 py-1 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition">Cross-Section</button>
+          <button id="btnCutaway" class="px-2.5 py-1 rounded-lg bg-emerald-950/60 text-emerald-400 border border-emerald-800/40 hover:bg-emerald-900/60 transition flex items-center gap-1">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.121 14.121L19 19m-7-7l7-7m-7 7l-2.879 2.879M12 12L9.121 9.121m0 5.758a3 3 0 10-4.243-4.243 3 3 0 004.243 4.243z"/></svg>
+            <span id="cutawayLabel">Cutaway ON</span>
+          </button>
+          <button id="btnResetView" title="Reset Camera View" class="p-1.5 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- 3D Visualizer Physics Display Toggles (Upper Right) -->
+      <div id="visToggles" class="absolute top-16 right-3 z-10 pointer-events-auto bg-slate-900/90 border border-slate-700/80 p-2.5 rounded-xl text-[11px] shadow-lg backdrop-blur space-y-1.5">
+        <span class="text-slate-400 font-semibold uppercase text-[10px] tracking-wider block">3D Physics Overlays</span>
+        <label class="flex items-center gap-2 text-slate-300 hover:text-white cursor-pointer">
+          <input type="checkbox" id="chkShowCarriers" checked class="rounded bg-slate-800 border-slate-600 text-indigo-600">
+          <span>Carrier Drift (e⁻ Flow)</span>
+        </label>
+        <label class="flex items-center gap-2 text-slate-300 hover:text-white cursor-pointer">
+          <input type="checkbox" id="chkShowDepletion" checked class="rounded bg-slate-800 border-slate-600 text-indigo-600">
+          <span>Depletion Zone & Ions (N<sub>A</sub>⁻)</span>
+        </label>
+        <label class="flex items-center gap-2 text-slate-300 hover:text-white cursor-pointer">
+          <input type="checkbox" id="chkShowFields" checked class="rounded bg-slate-800 border-slate-600 text-indigo-600">
+          <span>Electric Field Vectors (E<sub>y</sub>, E<sub>x</sub>)</span>
+        </label>
+        <label class="flex items-center gap-2 text-slate-300 hover:text-white cursor-pointer">
+          <input type="checkbox" id="chkShowCurrent" checked class="rounded bg-slate-800 border-slate-600 text-indigo-600">
+          <span>Conventional Current (I<sub>D</sub>)</span>
+        </label>
+      </div>
+
+      <!-- 3D WebGL Canvas Mounting Point -->
+      <div id="threeCanvasContainer" class="canvas-container flex-1 w-full h-full cursor-grab active:cursor-grabbing"></div>
+
+      <!-- Live Semiconductor Physics Status Narrative (Bottom Center HUD) -->
+      <div id="livePhysicsHUD" class="absolute bottom-16 left-3 right-3 sm:left-auto sm:right-3 sm:max-w-md z-10 pointer-events-auto bg-slate-900/95 border border-indigo-500/40 p-3 rounded-xl shadow-2xl backdrop-blur text-xs">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-1 mb-1.5">
+          <div class="flex items-center gap-1.5 font-bold text-slate-200">
+            <span class="w-2 h-2 rounded-full bg-indigo-400"></span>
+            <span>What Changes in the Semiconductor Right Now?</span>
+          </div>
+          <span id="carrierDriftSpeed" class="text-[10px] font-mono text-emerald-400">Drift: 4.8e6 cm/s</span>
+        </div>
+        <p id="livePhysicsText" class="text-[11px] text-slate-300 leading-relaxed">
+          Gate vertical field has depleted majority holes; surface potential ψs &gt; 2ϕF creates strong inversion channel. Lateral field E<sub>x</sub> sweeps electrons from Source to Drain, while conventional current I<sub>D</sub> flows Drain &rarr; Source.
+        </p>
+      </div>
+
+      <!-- Interactive 3D Legend & Exploded Slider (Bottom Left & Right) -->
+      <div class="absolute bottom-3 left-3 z-10 pointer-events-auto bg-slate-900/90 border border-slate-800 p-2.5 rounded-xl text-xs backdrop-blur max-w-sm hidden sm:block">
+        <div class="font-semibold text-slate-300 mb-1.5 flex items-center justify-between">
+          <span>VLSI Material Layers</span>
+          <span class="text-[10px] text-slate-400 font-normal">Click 3D part to inspect</span>
+        </div>
+        <div class="grid grid-cols-2 gap-x-3 gap-y-1 text-[11px]">
+          <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-sm bg-slate-500 border border-slate-400"></span><span class="text-slate-300">P-Substrate (Si)</span></div>
+          <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-sm bg-emerald-400"></span><span class="text-slate-300">N+ Source / Drain</span></div>
+          <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-sm bg-sky-400"></span><span class="text-slate-300">High-k Gate Oxide</span></div>
+          <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-sm bg-amber-400"></span><span class="text-slate-300">Metal / Poly Gate</span></div>
+          <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-sm bg-cyan-300 animate-pulse"></span><span class="text-slate-300">Inversion Channel</span></div>
+          <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-sm bg-purple-500"></span><span class="text-slate-300">Depletion / Fixed Ions</span></div>
+        </div>
+      </div>
+
+      <!-- Exploded View Slider Overlay -->
+      <div class="absolute bottom-3 right-3 z-10 pointer-events-auto bg-slate-900/90 border border-slate-800 p-2 rounded-xl text-xs backdrop-blur flex items-center gap-2">
+        <span class="text-slate-400 whitespace-nowrap text-[11px]">Explode 3D:</span>
+        <input type="range" id="sliderExplode" min="0" max="100" value="0" class="w-20 h-1.5 bg-slate-700 rounded-lg cursor-pointer">
+        <span id="explodeVal" class="text-indigo-400 font-mono font-semibold w-7 text-right text-[11px]">0%</span>
+      </div>
+
+      <!-- 3D Component Inspector Floating Tooltip -->
+      <div id="inspectorCard" class="absolute top-20 left-3 z-20 pointer-events-auto bg-slate-900/95 border border-indigo-500/50 p-3 rounded-xl shadow-2xl backdrop-blur max-w-xs transition-all duration-200 hidden">
+        <div class="flex items-start justify-between gap-2 border-b border-slate-800 pb-1.5 mb-1.5">
+          <div class="flex items-center gap-1.5">
+            <span id="inspectBadge" class="w-2.5 h-2.5 rounded-full bg-indigo-400"></span>
+            <h4 id="inspectTitle" class="text-xs font-bold text-white uppercase tracking-wider">Gate Oxide</h4>
+          </div>
+          <button id="closeInspector" class="text-slate-400 hover:text-white text-xs">&times;</button>
+        </div>
+        <p id="inspectDesc" class="text-[11px] text-slate-300 leading-relaxed mb-2">High-k dielectric ($SiO_2$ or $HfO_2$) isolating gate metal from conducting channel.</p>
+        <div id="inspectProps" class="text-[10px] space-y-0.5 text-slate-400 font-mono bg-slate-950/60 p-2 rounded border border-slate-800/80">
+          <div>Thickness: <span class="text-slate-200">1.2 nm</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Side Control Panel & Analytics Hub -->
+    <aside class="w-full lg:w-[480px] border-l border-slate-800 bg-slate-900/95 flex flex-col h-auto lg:h-full overflow-y-auto">
+      
+      <!-- TAB 1: MOSFET Physics & Biasing Controls -->
+      <div id="panelMosfet" class="tab-panel p-4 space-y-4">
+        
+        <!-- Transistor Selection & Vth Display -->
+        <div class="flex items-center justify-between gap-2">
+          <div class="inline-flex p-1 bg-slate-950 rounded-lg border border-slate-800 text-xs font-medium">
+            <button id="btnSelectNMOS" class="px-3 py-1 rounded-md bg-indigo-600 text-white transition">NMOS (Electron)</button>
+            <button id="btnSelectPMOS" class="px-3 py-1 rounded-md text-slate-400 hover:text-slate-200 transition">PMOS (Hole)</button>
+          </div>
+          <span class="text-xs text-slate-400">Effective Vth = <strong id="vthDisp" class="text-indigo-400 font-mono font-bold">0.60 V</strong></span>
+        </div>
+
+        <!-- Operating Presets -->
+        <div class="space-y-1.5">
+          <label class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Operating Presets</label>
+          <div class="grid grid-cols-3 gap-1.5 text-xs">
+            <button class="preset-btn px-2 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 transition text-left" data-preset="cutoff">
+              <span class="block font-semibold">1. Cutoff</span>
+              <span class="text-[10px] text-slate-400">VGS &lt; Vth</span>
+            </button>
+            <button class="preset-btn px-2 py-1.5 rounded-lg bg-indigo-900/40 border border-indigo-700/50 hover:bg-indigo-800/50 text-indigo-200 transition text-left" data-preset="linear">
+              <span class="block font-semibold">2. Triode</span>
+              <span class="text-[10px] text-indigo-300">VDS &lt; Vov</span>
+            </button>
+            <button class="preset-btn px-2 py-1.5 rounded-lg bg-amber-900/40 border border-amber-700/50 hover:bg-amber-800/50 text-amber-200 transition text-left" data-preset="saturation">
+              <span class="block font-semibold">3. Saturation</span>
+              <span class="text-[10px] text-amber-300">VDS &ge; Vov</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Terminal Voltage Sliders -->
+        <div class="space-y-3 bg-slate-950/60 p-3.5 rounded-xl border border-slate-800">
+          <div class="text-xs font-semibold text-slate-300 flex items-center justify-between">
+            <span>Terminal Biases & Physical Tuning</span>
+            <span class="text-[10px] text-emerald-400 font-mono">Live Physics Engine</span>
+          </div>
+
+          <!-- VGS Slider -->
+          <div>
+            <div class="flex justify-between text-xs mb-1">
+              <label for="sliderVGS" class="text-slate-300 font-medium">Gate-Source Voltage (VGS) &rarr; Controls Vertical Field E<sub>y</sub></label>
+              <span id="vgsVal" class="font-mono text-indigo-400 font-bold">1.40 V</span>
+            </div>
+            <input type="range" id="sliderVGS" min="0" max="2.5" step="0.05" value="1.40" class="w-full h-2 bg-slate-800 rounded-lg cursor-pointer">
+            <div class="flex justify-between text-[10px] text-slate-500 mt-0.5">
+              <span>0.0 V (Off)</span>
+              <span>Vth = 0.6 V</span>
+              <span>2.5 V (Strong Inv)</span>
+            </div>
+          </div>
+
+          <!-- VDS Slider -->
+          <div>
+            <div class="flex justify-between text-xs mb-1">
+              <label for="sliderVDS" class="text-slate-300 font-medium">Drain-Source Voltage (VDS) &rarr; Controls Lateral Field E<sub>x</sub></label>
+              <span id="vdsVal" class="font-mono text-emerald-400 font-bold">0.80 V</span>
+            </div>
+            <input type="range" id="sliderVDS" min="0" max="2.5" step="0.05" value="0.80" class="w-full h-2 bg-slate-800 rounded-lg cursor-pointer">
+            <div class="flex justify-between text-[10px] text-slate-500 mt-0.5">
+              <span>0.0 V (Zero Drift)</span>
+              <span id="vdsSatMarkerText">Vds,sat = 0.80 V</span>
+              <span>2.5 V</span>
+            </div>
+          </div>
+
+          <!-- VBS Substrate Bias Slider (Body Effect) -->
+          <div>
+            <div class="flex justify-between text-xs mb-1">
+              <label for="sliderVBS" class="text-slate-300 font-medium">Substrate Bias (VBS) &rarr; Expands Depletion Depth</label>
+              <span id="vbsVal" class="font-mono text-purple-400 font-bold">0.00 V</span>
+            </div>
+            <input type="range" id="sliderVBS" min="-1.5" max="0.0" step="0.05" value="0.00" class="w-full h-2 bg-slate-800 rounded-lg cursor-pointer">
+            <div class="flex justify-between text-[10px] text-slate-500 mt-0.5">
+              <span>-1.5 V (High Depletion)</span>
+              <span>0.0 V (GND)</span>
+            </div>
+          </div>
+
+          <!-- Physical Dimensions W / L -->
+          <div class="grid grid-cols-2 gap-2 pt-1 border-t border-slate-800/80">
+            <div>
+              <div class="flex justify-between text-[11px] mb-0.5">
+                <span class="text-slate-400">Channel Width W</span>
+                <span id="wVal" class="text-slate-200 font-mono">4.0 μm</span>
+              </div>
+              <input type="range" id="sliderW" min="1" max="10" step="0.5" value="4.0" class="w-full h-1.5 bg-slate-800 rounded cursor-pointer">
+            </div>
+            <div>
+              <div class="flex justify-between text-[11px] mb-0.5">
+                <span class="text-slate-400">Channel Length L</span>
+                <span id="lVal" class="text-slate-200 font-mono">180 nm</span>
+              </div>
+              <input type="range" id="sliderL" min="45" max="500" step="15" value="180" class="w-full h-1.5 bg-slate-800 rounded cursor-pointer">
+            </div>
+          </div>
+        </div>
+
+        <!-- Telemetry & Dynamic Readout -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          <div class="bg-slate-950 p-2 rounded-lg border border-slate-800">
+            <span class="text-[10px] text-slate-400 block">Drain Current (ID)</span>
+            <span id="idDisp" class="text-sm font-mono font-bold text-emerald-400">1.24 mA</span>
+          </div>
+          <div class="bg-slate-950 p-2 rounded-lg border border-slate-800">
+            <span class="text-[10px] text-slate-400 block">Overdrive (Vov)</span>
+            <span id="vovDisp" class="text-sm font-mono font-bold text-indigo-400">0.80 V</span>
+          </div>
+          <div class="bg-slate-950 p-2 rounded-lg border border-slate-800">
+            <span class="text-[10px] text-slate-400 block">Transconductance gm</span>
+            <span id="gmDisp" class="text-sm font-mono font-bold text-sky-400">2.15 mS</span>
+          </div>
+          <div class="bg-slate-950 p-2 rounded-lg border border-slate-800">
+            <span class="text-[10px] text-slate-400 block">Pinch-off State</span>
+            <span id="pinchDisp" class="text-xs font-mono font-bold text-amber-400">Conducting</span>
+          </div>
+        </div>
+
+        <!-- Synchronized Live I-V Graph -->
+        <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 space-y-2">
+          <div class="flex items-center justify-between text-xs">
+            <span class="font-semibold text-slate-300">Output Characteristic (ID vs VDS)</span>
+            <div class="flex items-center gap-2 text-[10px]">
+              <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-emerald-400"></span>Operating Point</span>
+              <span class="flex items-center gap-1 text-slate-400"><span class="w-2 h-0.5 bg-amber-400"></span>Vds,sat line</span>
+            </div>
+          </div>
+          <div class="relative h-44 w-full">
+            <canvas id="chartIV"></canvas>
+          </div>
+          <p id="mathFormula" class="text-[11px] font-mono text-slate-400 bg-slate-900/80 p-2 rounded border border-slate-800/80">
+            ID = μn·Cox·(W/L)·[(VGS - Vth)·VDS - 0.5·VDS²]
+          </p>
+        </div>
+
+      </div>
+
+      <!-- TAB 2: Exact 12-Step Foundry Fabrication Stepper -->
+      <div id="panelFabrication" class="tab-panel p-4 space-y-4 hidden">
+        <div class="bg-slate-950/70 p-3.5 rounded-xl border border-slate-800 space-y-2">
+          <div class="flex items-center justify-between">
+            <h3 class="text-sm font-bold text-slate-200">Exact 12-Step Industrial Semiconductor Fabrication</h3>
+            <span id="fabStepBadge" class="text-xs px-2.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 font-mono font-bold border border-indigo-500/30">Step 1 / 12</span>
+          </div>
+          <p class="text-xs text-slate-400 leading-relaxed">
+            The precise industry foundry sequence used by TSMC, Samsung, and Intel to manufacture commercial CMOS integrated circuits with atomic precision.
+          </p>
+        </div>
+
+        <!-- Step Navigation Controls -->
+        <div class="flex items-center justify-between gap-2">
+          <button id="btnFabPrev" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium transition flex items-center gap-1">
+            &larr; Prev Step
+          </button>
+          <div class="flex items-center gap-1 flex-wrap justify-center" id="fabDots">
+            <!-- Dynamic step indicator dots (1 to 12) -->
+          </div>
+          <button id="btnFabNext" class="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium transition flex items-center gap-1">
+            Next Step &rarr;
+          </button>
+        </div>
+
+        <!-- Active Fab Step Detail Card -->
+        <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-3">
+          <div class="flex items-center gap-2 text-indigo-400">
+            <span id="fabStepNum" class="w-6 h-6 rounded-full bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center font-mono font-bold text-xs">1</span>
+            <h4 id="fabStepTitle" class="text-sm font-bold text-slate-100">RCA Chemical Cleaning & Substrate Prep</h4>
+          </div>
+          <p id="fabStepBody" class="text-xs text-slate-300 leading-relaxed">
+            300mm &lt;100&gt; P-type Boron-doped wafer undergoes Standard Clean 1 (SC-1) and SC-2 to strip organic films, native oxide, and metallic ionic residues prior to high-temperature thermal processing.
+          </p>
+
+          <!-- Technical Specs & Foundry Chemistry -->
+          <div class="p-3 rounded-lg bg-slate-900 border border-slate-800/80 text-[11px] space-y-1.5">
+            <div class="text-slate-400 font-semibold uppercase text-[10px] tracking-wider">Foundry Process Recipe & Chemistry:</div>
+            <div id="fabStepChemistry" class="font-mono text-emerald-300 text-[11px]">
+              SC-1: 5:1:1 H₂O:NH₄OH:H₂O₂ @ 75°C &rarr; HF Dip (1:50) &rarr; SC-2: 6:1:1 H₂O:HCl:H₂O₂ @ 80°C
+            </div>
+            <div class="text-slate-400 font-semibold uppercase text-[10px] tracking-wider pt-1">Equipment & Process Tooling:</div>
+            <div id="fabStepEquip" class="font-mono text-slate-300 text-[11px]">
+              Tool: Automated Wet Clean Bench / Megasonic Batch Cleaning Station (Tokyo Electron / SCREEN)
+            </div>
+            <div class="text-slate-400 font-semibold uppercase text-[10px] tracking-wider pt-1">Physical Specifications:</div>
+            <div id="fabStepSpecs" class="font-mono text-slate-300 space-y-0.5 text-[11px]">
+              <div>Wafer Diameter: 300 mm (12 inch) | Thickness: 775 μm</div>
+              <div>Substrate Doping: Boron NA ≈ 10¹⁵ cm⁻³ (Resistivity 10 Ω·cm)</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Process Phase Categorization -->
+        <div class="grid grid-cols-3 gap-2 text-[11px]">
+          <div class="p-2 rounded bg-slate-950 border border-slate-800">
+            <span class="text-sky-400 font-bold block">FEOL (Front-End)</span>
+            <span class="text-slate-400 text-[10px]">Steps 1–7: Wells, STI isolation, high-k gate stack, & channel.</span>
+          </div>
+          <div class="p-2 rounded bg-slate-950 border border-slate-800">
+            <span class="text-amber-400 font-bold block">MEOL (Middle-End)</span>
+            <span class="text-slate-400 text-[10px]">Steps 8–11: LDD, spacers, source/drain, & NiSi salicide.</span>
+          </div>
+          <div class="p-2 rounded bg-slate-950 border border-slate-800">
+            <span class="text-emerald-400 font-bold block">BEOL (Back-End)</span>
+            <span class="text-slate-400 text-[10px]">Step 12: Dual-damascene Cu interconnects & passivation.</span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- TAB 3: Fabrication Types Comparison Matrix & Industry Matcher -->
+      <div id="panelFabTypes" class="tab-panel p-4 space-y-4 hidden">
+        <div class="bg-slate-950/70 p-3.5 rounded-xl border border-slate-800 space-y-2">
+          <div class="flex items-center justify-between">
+            <h3 class="text-sm font-bold text-slate-200">VLSI Fabrication Technologies Comparison & Industry Guide</h3>
+            <span class="text-[10px] px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-mono font-bold">Process Architecture Selection</span>
+          </div>
+          <p class="text-xs text-slate-400 leading-relaxed">
+            Every semiconductor manufacturing type trades off raw performance, leakage current, operating voltage, mask costs, and thermal limits. Select an industry application below to discover the optimal technology choice.
+          </p>
+        </div>
+
+        <!-- Interactive Industry Application Matcher -->
+        <div class="bg-slate-950 p-3.5 rounded-xl border border-slate-800 space-y-2.5">
+          <span class="text-xs font-semibold text-slate-300 block">Select Target Industry & Application Requirement:</span>
+          <div class="grid grid-cols-2 gap-2 text-xs">
+            <button id="btnAppHPC" class="app-btn p-2 rounded-lg bg-indigo-900/40 border border-indigo-700/60 hover:bg-indigo-800/60 text-left transition" data-app="hpc">
+              <span class="font-bold text-indigo-300 block">Data Center AI & HPC</span>
+              <span class="text-[10px] text-slate-400">GPUs, TPUs, LLM accelerators</span>
+            </button>
+            <button id="btnAppAuto" class="app-btn p-2 rounded-lg bg-slate-900 border border-slate-800 hover:bg-slate-800 text-left transition" data-app="auto">
+              <span class="font-bold text-slate-200 block">Automotive & ADAS</span>
+              <span class="text-[10px] text-slate-400">Engine ECUs, 77GHz radar, EV</span>
+            </button>
+            <button id="btnAppRF" class="app-btn p-2 rounded-lg bg-slate-900 border border-slate-800 hover:bg-slate-800 text-left transition" data-app="rf">
+              <span class="font-bold text-slate-200 block">5G / 6G & Satellite RF</span>
+              <span class="text-[10px] text-slate-400">Front-end modules, phased arrays</span>
+            </button>
+            <button id="btnAppIoT" class="app-btn p-2 rounded-lg bg-slate-900 border border-slate-800 hover:bg-slate-800 text-left transition" data-app="iot">
+              <span class="font-bold text-slate-200 block">Ultra-Low-Power Edge IoT</span>
+              <span class="text-[10px] text-slate-400">Wearables, 10-year coin battery</span>
+            </button>
+            <button id="btnAppSpace" class="app-btn p-2 rounded-lg bg-slate-900 border border-slate-800 hover:bg-slate-800 text-left transition" data-app="space">
+              <span class="font-bold text-slate-200 block">Aerospace & Rad-Hard</span>
+              <span class="text-[10px] text-slate-400">Space exploration, SEU immunity</span>
+            </button>
+            <button id="btnAppPower" class="app-btn p-2 rounded-lg bg-slate-900 border border-slate-800 hover:bg-slate-800 text-left transition" data-app="power">
+              <span class="font-bold text-slate-200 block">High-Voltage EV Inverters</span>
+              <span class="text-[10px] text-slate-400">&gt;650V-1200V traction power</span>
+            </button>
+          </div>
+
+          <!-- Recommendation Result Card -->
+          <div id="appRecommendationCard" class="p-3 rounded-lg bg-indigo-950/40 border border-indigo-500/50 space-y-1.5 text-xs">
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] text-indigo-400 font-bold uppercase tracking-wider">Optimal Fabrication Process Choice:</span>
+              <span id="recTypeBadge" class="px-2 py-0.5 rounded font-mono font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">3D FinFET & GAAFET (N3/N2)</span>
+            </div>
+            <h4 id="recTitle" class="font-bold text-white text-xs">TSMC N3E / Intel 18A RibbonFET Architecture</h4>
+            <p id="recDesc" class="text-[11px] text-slate-300 leading-relaxed">
+              Provides highest transistor packing density (>150 MTr/mm²), ultra-steep subthreshold swing (S &lt; 65 mV/dec), and maximum clock frequency for high-density compute cores.
+            </p>
+            <div id="recChips" class="text-[10px] font-mono text-emerald-400 bg-slate-950/70 p-2 rounded border border-slate-800/80">
+              Commercial Examples: NVIDIA H100/B200, Apple M4, AMD EPYC Bergamo
+            </div>
+          </div>
+        </div>
+
+        <!-- Comprehensive Fabrication Types Comparison Matrix Table -->
+        <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 space-y-2">
+          <span class="text-xs font-semibold text-slate-300 block">Side-by-Side Fabrication Process Comparison</span>
+          <div class="overflow-x-auto text-[11px]">
+            <table class="w-full text-left border-collapse min-w-[420px]">
+              <thead>
+                <tr class="border-b border-slate-800 text-slate-400 text-[10px] uppercase font-mono">
+                  <th class="py-1.5 px-2">Process Type</th>
+                  <th class="py-1.5 px-2">Node Range</th>
+                  <th class="py-1.5 px-2">Gate Control</th>
+                  <th class="py-1.5 px-2">Leakage (Ioff)</th>
+                  <th class="py-1.5 px-2">Mask Cost</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-800/60 font-mono text-[10px]">
+                <tr class="hover:bg-slate-900/50">
+                  <td class="py-1.5 px-2 text-indigo-300 font-bold">1. Bulk Planar CMOS</td>
+                  <td class="py-1.5 px-2 text-slate-300">&ge; 28 nm</td>
+                  <td class="py-1.5 px-2 text-amber-400">1-Sided (Poor SCE)</td>
+                  <td class="py-1.5 px-2 text-rose-400">High (sub-28nm)</td>
+                  <td class="py-1.5 px-2 text-emerald-400">1x (Baseline)</td>
+                </tr>
+                <tr class="hover:bg-slate-900/50">
+                  <td class="py-1.5 px-2 text-sky-300 font-bold">2. FD-SOI (Thin-BOX)</td>
+                  <td class="py-1.5 px-2 text-slate-300">28nm &ndash; 12nm</td>
+                  <td class="py-1.5 px-2 text-emerald-400">Full Depletion + Body Bias</td>
+                  <td class="py-1.5 px-2 text-emerald-400">Ultra-Low (&lt;1 pA/μm)</td>
+                  <td class="py-1.5 px-2 text-sky-400">1.3x (Low Masks)</td>
+                </tr>
+                <tr class="hover:bg-slate-900/50">
+                  <td class="py-1.5 px-2 text-emerald-300 font-bold">3. 3D FinFET (Tri-Gate)</td>
+                  <td class="py-1.5 px-2 text-slate-300">16nm &ndash; 3nm</td>
+                  <td class="py-1.5 px-2 text-emerald-400">3-Sided (Wrapped Fin)</td>
+                  <td class="py-1.5 px-2 text-amber-400">Low-Moderate</td>
+                  <td class="py-1.5 px-2 text-amber-400">3x &ndash; 5x (EUV)</td>
+                </tr>
+                <tr class="hover:bg-slate-900/50">
+                  <td class="py-1.5 px-2 text-purple-300 font-bold">4. GAAFET (Nanosheet)</td>
+                  <td class="py-1.5 px-2 text-slate-300">3nm &ndash; 1.4nm</td>
+                  <td class="py-1.5 px-2 text-emerald-400">4-Sided (All-Around)</td>
+                  <td class="py-1.5 px-2 text-emerald-400">Extremely Low</td>
+                  <td class="py-1.5 px-2 text-rose-400">6x &ndash; 8x (High-NA EUV)</td>
+                </tr>
+                <tr class="hover:bg-slate-900/50">
+                  <td class="py-1.5 px-2 text-amber-300 font-bold">5. SiGe BiCMOS</td>
+                  <td class="py-1.5 px-2 text-slate-300">130nm &ndash; 28nm</td>
+                  <td class="py-1.5 px-2 text-slate-400">Bipolar Base + CMOS</td>
+                  <td class="py-1.5 px-2 text-slate-400">Moderate</td>
+                  <td class="py-1.5 px-2 text-amber-400">2x &ndash; 2.5x</td>
+                </tr>
+                <tr class="hover:bg-slate-900/50">
+                  <td class="py-1.5 px-2 text-rose-300 font-bold">6. GaN / SiC Power</td>
+                  <td class="py-1.5 px-2 text-slate-300">Wide Bandgap</td>
+                  <td class="py-1.5 px-2 text-slate-400">2DEG HEMT / Trench</td>
+                  <td class="py-1.5 px-2 text-emerald-400">Zero Reverse Recovery</td>
+                  <td class="py-1.5 px-2 text-amber-400">Specialty Fab</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- TAB 4: CMOS Inverter Simulation Panel -->
+      <div id="panelCmos" class="tab-panel p-4 space-y-4 hidden">
+        <div class="bg-slate-950/70 p-3.5 rounded-xl border border-slate-800 space-y-3">
+          <div class="flex items-center justify-between">
+            <h3 class="text-sm font-bold text-slate-200">CMOS Inverter (NOT Gate) Silicon Logic</h3>
+            <span class="text-[10px] px-2 py-0.5 rounded bg-sky-500/20 text-sky-300 font-mono">VDD = 1.8 V</span>
+          </div>
+          <p class="text-xs text-slate-400 leading-relaxed">
+            Complementary MOS circuit: PMOS pull-up and NMOS pull-down transistors ensure zero static DC current in steady state.
+          </p>
+
+          <!-- Input Voltage Slider -->
+          <div class="pt-2">
+            <div class="flex justify-between text-xs mb-1">
+              <label for="sliderVin" class="text-slate-300 font-medium">Input Voltage (Vin)</label>
+              <span id="vinVal" class="font-mono text-sky-400 font-bold">0.00 V (Logic '0')</span>
+            </div>
+            <input type="range" id="sliderVin" min="0" max="1.8" step="0.02" value="0.00" class="w-full h-2 bg-slate-800 rounded-lg cursor-pointer">
+            <div class="flex justify-between text-[10px] text-slate-500 mt-0.5">
+              <span>0.0 V ('0')</span>
+              <span>VM ≈ 0.9 V (Switching)</span>
+              <span>1.8 V ('1')</span>
+            </div>
+          </div>
+
+          <!-- Quick Toggle Buttons -->
+          <div class="grid grid-cols-3 gap-2">
+            <button id="btnVinLow" class="px-2 py-1.5 rounded-lg bg-sky-900/40 border border-sky-700/50 text-sky-300 text-xs font-medium hover:bg-sky-800/50 transition">
+              Input = 0V ('0')
+            </button>
+            <button id="btnVinMid" class="px-2 py-1.5 rounded-lg bg-amber-900/40 border border-amber-700/50 text-amber-300 text-xs font-medium hover:bg-amber-800/50 transition">
+              Threshold (0.9V)
+            </button>
+            <button id="btnVinHigh" class="px-2 py-1.5 rounded-lg bg-emerald-900/40 border border-emerald-700/50 text-emerald-300 text-xs font-medium hover:bg-emerald-800/50 transition">
+              Input = 1.8V ('1')
+            </button>
+          </div>
+        </div>
+
+        <!-- Inverter Status Cards -->
+        <div class="grid grid-cols-2 gap-2">
+          <div class="bg-slate-950 p-3 rounded-xl border border-slate-800">
+            <span class="text-[10px] text-slate-400 uppercase tracking-wider block">Output Voltage (Vout)</span>
+            <div class="flex items-baseline gap-2 mt-1">
+              <span id="voutDisp" class="text-lg font-mono font-bold text-emerald-400">1.80 V</span>
+              <span id="voutLogicDisp" class="text-xs px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold">LOGIC 1</span>
+            </div>
+          </div>
+          <div class="bg-slate-950 p-3 rounded-xl border border-slate-800">
+            <span class="text-[10px] text-slate-400 uppercase tracking-wider block">Short-Circuit IDD</span>
+            <div class="flex items-baseline gap-2 mt-1">
+              <span id="iddDisp" class="text-lg font-mono font-bold text-slate-300">0.00 μA</span>
+              <span class="text-[10px] text-slate-500">Static Leakage</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Transistor State Table -->
+        <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 text-xs space-y-2">
+          <span class="font-semibold text-slate-300 block">Transistor Operating States</span>
+          <div class="grid grid-cols-2 gap-2 text-[11px]">
+            <div class="p-2 rounded bg-slate-900 border border-slate-800">
+              <span class="text-pink-400 font-semibold block">PMOS (Pull-Up)</span>
+              <div id="pmosStatus" class="font-mono text-emerald-400 font-bold mt-0.5">ON (Linear)</div>
+              <div class="text-[10px] text-slate-400 mt-0.5">Conducting to VDD rail</div>
+            </div>
+            <div class="p-2 rounded bg-slate-900 border border-slate-800">
+              <span class="text-cyan-400 font-semibold block">NMOS (Pull-Down)</span>
+              <div id="nmosStatus" class="font-mono text-rose-400 font-bold mt-0.5">OFF (Cutoff)</div>
+              <div class="text-[10px] text-slate-400 mt-0.5">Isolating Output from GND</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Live VTC Graph -->
+        <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 space-y-2">
+          <div class="flex items-center justify-between text-xs">
+            <span class="font-semibold text-slate-300">Voltage Transfer Characteristic (VTC)</span>
+            <span class="text-[10px] text-slate-400">Vout vs Vin</span>
+          </div>
+          <div class="relative h-44 w-full">
+            <canvas id="chartVTC"></canvas>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- TAB 5: Energy Bands & Quantum Field Panel -->
+      <div id="panelEnergy" class="tab-panel p-4 space-y-4 hidden">
+        <div class="bg-slate-950/70 p-3.5 rounded-xl border border-slate-800 space-y-2">
+          <h3 class="text-sm font-bold text-slate-200">MOS Capacitor Band Bending & Interface Physics</h3>
+          <p class="text-xs text-slate-400 leading-relaxed">
+            Explore how an applied gate electric field bends the conduction and valence energy bands in the silicon substrate to invert the surface and form the conduction channel.
+          </p>
+        </div>
+
+        <!-- Band Voltage Tuning -->
+        <div class="bg-slate-950 p-3.5 rounded-xl border border-slate-800 space-y-3">
+          <div class="flex justify-between text-xs">
+            <label for="sliderBandVG" class="text-slate-300 font-medium">Applied Gate Bias (VG)</label>
+            <span id="bandVGVal" class="font-mono text-indigo-400 font-bold">1.20 V</span>
+          </div>
+          <input type="range" id="sliderBandVG" min="-1.5" max="2.0" step="0.05" value="1.20" class="w-full h-2 bg-slate-800 rounded-lg cursor-pointer">
+          <div class="flex justify-between text-[10px] text-slate-500">
+            <span>-1.5 V (Accumulation)</span>
+            <span>0.0 V (Depletion)</span>
+            <span>+2.0 V (Strong Inversion)</span>
+          </div>
+
+          <div class="p-2.5 rounded bg-slate-900 border border-slate-800 text-xs">
+            <div class="flex items-center justify-between mb-1">
+              <span class="text-slate-400">Regime:</span>
+              <span id="bandRegimeBadge" class="font-mono font-bold text-emerald-400">STRONG INVERSION</span>
+            </div>
+            <p id="bandRegimeDesc" class="text-[11px] text-slate-300 leading-normal">
+              Surface potential ψs &ge; 2ϕF. The conduction band Ec has dipped below the Fermi level EF, creating an abundant layer of conduction electrons at the interface.
+            </p>
+          </div>
+        </div>
+
+        <!-- 2D Band Diagram Graph -->
+        <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 space-y-2">
+          <div class="flex items-center justify-between text-xs">
+            <span class="font-semibold text-slate-300">Energy Band Profiles vs Depth (x)</span>
+            <div class="flex gap-2 text-[10px]">
+              <span class="text-sky-400">Ec</span>
+              <span class="text-amber-400">Ei</span>
+              <span class="text-rose-400">Ev</span>
+              <span class="text-emerald-400">EF</span>
+            </div>
+          </div>
+          <div class="relative h-44 w-full">
+            <canvas id="chartBands"></canvas>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- TAB 6: VLSI Theory & Interactive Quiz Panel -->
+      <div id="panelTheory" class="tab-panel p-4 space-y-4 hidden">
+        
+        <div class="space-y-2.5">
+          <h3 class="text-sm font-bold text-slate-200">VLSI Engineering Knowledge Base</h3>
+          
+          <div class="p-3 rounded-xl bg-slate-950 border border-slate-800 space-y-1.5 text-xs">
+            <h4 class="font-bold text-indigo-400">1. MOSFET 3 Operating Regions</h4>
+            <ul class="space-y-1 text-slate-300 list-disc list-inside text-[11px]">
+              <li><strong>Cutoff (VGS &lt; Vth):</strong> Channel absent. Zero drift current, only tiny subthreshold leakage.</li>
+              <li><strong>Triode/Linear (VGS &gt; Vth, VDS &lt; Vov):</strong> Inversion channel is continuous from source to drain. Functions as voltage-controlled resistor.</li>
+              <li><strong>Saturation (VGS &gt; Vth, VDS &ge; Vov):</strong> Channel pinches off at drain edge. Current saturates and is controlled solely by VGS.</li>
+            </ul>
+          </div>
+
+          <div class="p-3 rounded-xl bg-slate-950 border border-slate-800 space-y-1.5 text-xs">
+            <h4 class="font-bold text-emerald-400">2. Short-Channel Effects (SCE)</h4>
+            <p class="text-[11px] text-slate-300 leading-relaxed">
+              As channel length L scales below 100nm, planar MOSFETs encounter <strong>DIBL</strong> (Drain-Induced Barrier Lowering), <strong>velocity saturation</strong>, and gate oxide quantum tunneling. This spurred the revolution to 3D <strong>FinFETs</strong> and <strong>Gate-All-Around (GAA)</strong> Nanosheets!
+            </p>
+          </div>
+        </div>
+
+        <!-- Interactive 5-Question Quiz -->
+        <div class="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-3">
+          <div class="flex items-center justify-between">
+            <h4 class="text-xs font-bold text-white uppercase tracking-wider">Concept Check Quiz</h4>
+            <span id="quizScore" class="text-xs font-mono font-bold text-indigo-400">Score: 0 / 5</span>
+          </div>
+
+          <div id="quizContainer" class="space-y-3 text-xs">
+            <!-- Questions injected via JS -->
+          </div>
+
+          <button id="btnResetQuiz" class="w-full py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium transition">
+            Reset Quiz
+          </button>
+        </div>
+
+      </div>
+
+    </aside>
+  </main>
+
+  <!-- Notification Toast -->
+  <div id="toast" class="fixed bottom-4 right-4 z-50 bg-indigo-600 text-white text-xs px-3.5 py-2 rounded-xl shadow-xl border border-indigo-400/40 opacity-0 pointer-events-none transition-all duration-300">
+    Notification
+  </div>
+
+  <!-- Main Application Script -->
+  <script>
+    /* Global Application State */
+    const appState = {
+      activeTab: 'mosfet',
+      transistorType: 'NMOS',
+      vgs: 1.40,
+      vds: 0.80,
+      vbs: 0.00,
+      vth0: 0.60,
+      w: 4.0, // um
+      l: 180, // nm
+      explodePercent: 0,
+      cutawayEnabled: true,
+      // 3D Physics Overlays
+      showCarriers: true,
+      showDepletion: true,
+      showFields: true,
+      showCurrent: true,
+      // CMOS state
+      vin: 0.00,
+      vdd: 1.80,
+      // Fabrication step
+      fabStep: 1,
+      maxFabSteps: 12,
+      // Energy Band bias
+      bandVG: 1.20,
+      // Industry Application selection
+      selectedApp: 'hpc'
+    };
+
+    /* Toast Helper */
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      if (!t) return;
+      t.textContent = msg;
+      t.style.opacity = '1';
+      setTimeout(() => { t.style.opacity = '0'; }, 2400);
+    }
+
+    /* Three.js Engine Variables */
+    let scene, camera, renderer, controls;
+    let container = document.getElementById('threeCanvasContainer');
+    let mosfetGroup, cmosGroup, fabGroup, bandGroup;
+    let channelMesh = null;
+    let pinchEffectMesh = null;
+    let depletionMesh = null;
+    let fixedIonsGroup = null;
+    let fieldVectorsGroup = null;
+    let currentFlowGroup = null;
+    let particleSystem = null;
+    let particlePositions = [];
+    let particleVelocities = [];
+    const NUM_PARTICLES = 360;
+
+    /* Explode Parts Tracking */
+    let explodables = [];
+
+    /* Chart.js instances */
+    let chartIV = null;
+    let chartVTC = null;
+    let chartBands = null;
+
+    /* Initialize Three.js Scene */
+    function initThree() {
+      scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x090d16);
+      scene.fog = new THREE.FogExp2(0x090d16, 0.025);
+
+      const width = container.clientWidth || 800;
+      const height = container.clientHeight || 500;
+
+      camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
+      camera.position.set(16, 12, 20);
+
+      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      renderer.setSize(width, height);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      container.appendChild(renderer.domElement);
+
+      controls = new THREE.OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
+      controls.dampingFactor = 0.05;
+      controls.maxPolarAngle = Math.PI / 2 + 0.05;
+      controls.minDistance = 5;
+      controls.maxDistance = 60;
+      controls.target.set(0, 0, 0);
+
+      // Lighting
+      const ambientLight = new THREE.AmbientLight(0xdbeafe, 0.75);
+      scene.add(ambientLight);
+
+      const dirLight = new THREE.DirectionalLight(0xffffff, 1.3);
+      dirLight.position.set(20, 30, 20);
+      dirLight.castShadow = true;
+      dirLight.shadow.mapSize.width = 1024;
+      dirLight.shadow.mapSize.height = 1024;
+      scene.add(dirLight);
+
+      const bluePoint = new THREE.PointLight(0x6366f1, 1.6, 30);
+      bluePoint.position.set(-10, 8, -5);
+      scene.add(bluePoint);
+
+      const cyanPoint = new THREE.PointLight(0x06b6d4, 1.4, 30);
+      cyanPoint.position.set(10, -5, 10);
+      scene.add(cyanPoint);
+
+      // Grid Floor
+      const grid = new THREE.GridHelper(40, 40, 0x334155, 0x1e293b);
+      grid.position.y = -3.8;
+      scene.add(grid);
+
+      // Groups for each mode
+      mosfetGroup = new THREE.Group();
+      cmosGroup = new THREE.Group();
+      fabGroup = new THREE.Group();
+      bandGroup = new THREE.Group();
+
+      scene.add(mosfetGroup);
+      scene.add(cmosGroup);
+      scene.add(fabGroup);
+      scene.add(bandGroup);
+
+      // Build 3D Models
+      buildMosfetModel();
+      buildCmosModel();
+      buildFabModel();
+      buildBandModel();
+
+      // Show default tab
+      updateSceneVisibility();
+
+      // Raycasting for interactive inspection
+      setupRaycaster();
+
+      // Window resize listener
+      window.addEventListener('resize', onWindowResize);
+    }
+
+    /* Build 3D MOSFET Model with Enhanced Physics Entities */
+    function buildMosfetModel() {
+      mosfetGroup.clear();
+      explodables = [];
+
+      const isNMOS = appState.transistorType === 'NMOS';
+      const subColor = isNMOS ? 0x253347 : 0x374151;
+      const diffColor = isNMOS ? 0x059669 : 0xdb2777;
+      const carrierColor = isNMOS ? 0x38bdf8 : 0xf43f5e;
+
+      // 1. Substrate Body
+      const subGeo = new THREE.BoxGeometry(14, 3.5, 9);
+      const subMat = new THREE.MeshStandardMaterial({
+        color: subColor,
+        roughness: 0.7,
+        metalness: 0.1,
+        transparent: true,
+        opacity: 0.92
+      });
+      const substrate = new THREE.Mesh(subGeo, subMat);
+      substrate.position.set(0, -1.75, 0);
+      substrate.receiveShadow = true;
+      substrate.userData = {
+        name: 'Silicon Substrate',
+        desc: isNMOS ? 'P-type Silicon Substrate (Doped with Boron atoms, providing hole majority carriers).' : 'N-type Silicon Substrate / Well (Doped with Arsenic/Phosphorus).',
+        specs: 'Doping: 1e16 cm⁻³ | Res: 10 Ω·cm'
+      };
+      mosfetGroup.add(substrate);
+      explodables.push({ mesh: substrate, basePos: new THREE.Vector3(0, -1.75, 0), dir: new THREE.Vector3(0, -1, 0), factor: 2.5 });
+
+      // 2. Source Diffusion Well (N+)
+      const wellGeo = new THREE.BoxGeometry(3.2, 1.6, 7.6);
+      const wellMat = new THREE.MeshStandardMaterial({
+        color: diffColor,
+        roughness: 0.4,
+        metalness: 0.2,
+        emissive: diffColor,
+        emissiveIntensity: 0.2
+      });
+      const sourceWell = new THREE.Mesh(wellGeo, wellMat);
+      sourceWell.position.set(-4.5, -0.8, 0);
+      sourceWell.castShadow = true;
+      sourceWell.userData = {
+        name: isNMOS ? 'Source (N+ Well)' : 'Source (P+ Well)',
+        desc: 'Heavily doped terminal that injects charge carriers into the channel. In NMOS, electrons flow out of the Source.',
+        specs: 'Doping: >1e20 cm⁻³ | Contact: Silicide'
+      };
+      mosfetGroup.add(sourceWell);
+
+      // 3. Drain Diffusion Well (N+)
+      const drainWell = new THREE.Mesh(wellGeo, wellMat);
+      drainWell.position.set(4.5, -0.8, 0);
+      drainWell.castShadow = true;
+      drainWell.userData = {
+        name: isNMOS ? 'Drain (N+ Well)' : 'Drain (P+ Well)',
+        desc: 'Heavily doped terminal that collects charge carriers swept across the channel under drain bias VDS.',
+        specs: 'Doping: >1e20 cm⁻³ | Contact: Silicide'
+      };
+      mosfetGroup.add(drainWell);
+
+      // 4. Gate Oxide (Thin SiO2 / High-k Dielectric)
+      const oxGeo = new THREE.BoxGeometry(6.0, 0.25, 7.6);
+      const oxMat = new THREE.MeshPhysicalMaterial({
+        color: 0x38bdf8,
+        roughness: 0.1,
+        metalness: 0.1,
+        transmission: 0.65,
+        transparent: true,
+        opacity: 0.85,
+        emissive: 0x0284c7,
+        emissiveIntensity: 0.25
+      });
+      const gateOxide = new THREE.Mesh(oxGeo, oxMat);
+      gateOxide.position.set(0, 0.125, 0);
+      gateOxide.userData = {
+        name: 'Gate Dielectric (HfO₂ High-k)',
+        desc: 'Extremely thin dielectric barrier insulating the gate terminal from the channel to prevent DC gate leakage current.',
+        specs: 'EOT: 1.2 nm | Permittivity εr: ~25 (HfO₂)'
+      };
+      mosfetGroup.add(gateOxide);
+      explodables.push({ mesh: gateOxide, basePos: new THREE.Vector3(0, 0.125, 0), dir: new THREE.Vector3(0, 1, 0), factor: 1.5 });
+
+      // 5. Polysilicon / Metal Gate Electrode
+      const gateGeo = new THREE.BoxGeometry(5.8, 1.2, 7.6);
+      const gateMat = new THREE.MeshStandardMaterial({
+        color: 0xf59e0b,
+        roughness: 0.3,
+        metalness: 0.8,
+        emissive: 0xd97706,
+        emissiveIntensity: 0.2
+      });
+      const gatePoly = new THREE.Mesh(gateGeo, gateMat);
+      gatePoly.position.set(0, 0.85, 0);
+      gatePoly.castShadow = true;
+      gatePoly.userData = {
+        name: 'Metal / Polysilicon Gate',
+        desc: 'Controlling electrode. Applying VGS establishes a vertical electric field Ey that inverts the silicon surface beneath the oxide.',
+        specs: 'Work function: 4.25 eV | Material: TiN / W stack'
+      };
+      mosfetGroup.add(gatePoly);
+      explodables.push({ mesh: gatePoly, basePos: new THREE.Vector3(0, 0.85, 0), dir: new THREE.Vector3(0, 1, 0), factor: 3.5 });
+
+      // 6. Contact Vias (Plugs)
+      const plugGeo = new THREE.CylinderGeometry(0.5, 0.5, 1.8, 16);
+      const plugMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.9, roughness: 0.2 });
+
+      const srcPlug = new THREE.Mesh(plugGeo, plugMat);
+      srcPlug.position.set(-4.5, 1.0, 0);
+      mosfetGroup.add(srcPlug);
+      explodables.push({ mesh: srcPlug, basePos: new THREE.Vector3(-4.5, 1.0, 0), dir: new THREE.Vector3(0, 1, 0), factor: 4.5 });
+
+      const drnPlug = new THREE.Mesh(plugGeo, plugMat);
+      drnPlug.position.set(4.5, 1.0, 0);
+      mosfetGroup.add(drnPlug);
+      explodables.push({ mesh: drnPlug, basePos: new THREE.Vector3(4.5, 1.0, 0), dir: new THREE.Vector3(0, 1, 0), factor: 4.5 });
+
+      const gatePlug = new THREE.Mesh(plugGeo, plugMat);
+      gatePlug.position.set(0, 2.0, 0);
+      mosfetGroup.add(gatePlug);
+      explodables.push({ mesh: gatePlug, basePos: new THREE.Vector3(0, 2.0, 0), dir: new THREE.Vector3(0, 1, 0), factor: 5.5 });
+
+      // 7. Dynamic Inversion Channel Mesh
+      const chanGeo = new THREE.BoxGeometry(5.8, 0.45, 7.4);
+      const chanMat = new THREE.MeshStandardMaterial({
+        color: carrierColor,
+        roughness: 0.2,
+        transparent: true,
+        opacity: 0.85,
+        emissive: carrierColor,
+        emissiveIntensity: 0.7
+      });
+      channelMesh = new THREE.Mesh(chanGeo, chanMat);
+      channelMesh.position.set(0, -0.22, 0);
+      channelMesh.userData = {
+        name: 'Inversion Channel Layer',
+        desc: 'Conductive sheet of mobile electrons inverted by gate electric field. Spans between Source and Drain wells.',
+        specs: 'Surface electron mobility: 450 cm²/(V·s)'
+      };
+      mosfetGroup.add(channelMesh);
+
+      // 8. Pinch-Off Depletion Region Mesh (near Drain)
+      const pinchGeo = new THREE.BoxGeometry(2.2, 0.45, 7.4);
+      const pinchMat = new THREE.MeshStandardMaterial({
+        color: 0xa855f7,
+        roughness: 0.3,
+        transparent: true,
+        opacity: 0.85,
+        emissive: 0x9333ea,
+        emissiveIntensity: 0.8
+      });
+      pinchEffectMesh = new THREE.Mesh(pinchGeo, pinchMat);
+      pinchEffectMesh.position.set(1.9, -0.22, 0);
+      pinchEffectMesh.visible = false;
+      mosfetGroup.add(pinchEffectMesh);
+
+      // 9. Depletion Region Boundary Mesh (underneath the channel into bulk)
+      const deplGeo = new THREE.BoxGeometry(6.2, 1.2, 7.6);
+      const deplMat = new THREE.MeshStandardMaterial({
+        color: 0x7c3aed,
+        transparent: true,
+        opacity: 0.35,
+        roughness: 0.5,
+        emissive: 0x6d28d9,
+        emissiveIntensity: 0.2
+      });
+      depletionMesh = new THREE.Mesh(deplGeo, deplMat);
+      depletionMesh.position.set(0, -0.9, 0);
+      mosfetGroup.add(depletionMesh);
+
+      // 10. Fixed Ionized Acceptor Ions Grid (NA- negative ions)
+      fixedIonsGroup = new THREE.Group();
+      const ionGeo = new THREE.SphereGeometry(0.12, 8, 8);
+      const ionMat = new THREE.MeshBasicMaterial({ color: 0xc084fc });
+      for (let ix = -2.5; ix <= 2.5; ix += 1.0) {
+        for (let iz = -3.0; iz <= 3.0; iz += 1.5) {
+          const ion = new THREE.Mesh(ionGeo, ionMat);
+          ion.position.set(ix, -0.9, iz);
+          fixedIonsGroup.add(ion);
+        }
+      }
+      mosfetGroup.add(fixedIonsGroup);
+
+      // 11. Electric Field Vectors (Ey vertical, Ex lateral)
+      fieldVectorsGroup = new THREE.Group();
+      // Vertical Gate Field Arrows
+      for (let fx = -2.4; fx <= 2.4; fx += 1.2) {
+        const arrow = new THREE.ArrowHelper(
+          new THREE.Vector3(0, -1, 0),
+          new THREE.Vector3(fx, 0.8, 0),
+          1.0,
+          0x38bdf8,
+          0.3,
+          0.15
+        );
+        fieldVectorsGroup.add(arrow);
+      }
+      // Lateral Drift Field Arrow (Drain to Source: Ex)
+      const latArrow = new THREE.ArrowHelper(
+        new THREE.Vector3(-1, 0, 0),
+        new THREE.Vector3(3.0, 0.1, 0),
+        5.5,
+        0xf59e0b,
+        0.5,
+        0.25
+      );
+      latArrow.name = 'lateralFieldArrow';
+      fieldVectorsGroup.add(latArrow);
+      mosfetGroup.add(fieldVectorsGroup);
+
+      // 12. Conventional Current (ID) Indicators (Drain -> Source on top)
+      currentFlowGroup = new THREE.Group();
+      const currArrow = new THREE.ArrowHelper(
+        new THREE.Vector3(-1, 0, 0),
+        new THREE.Vector3(3.5, 1.8, 0),
+        7.0,
+        0x10b981,
+        0.6,
+        0.3
+      );
+      currArrow.name = 'currentArrow';
+      currentFlowGroup.add(currArrow);
+      mosfetGroup.add(currentFlowGroup);
+
+      // 13. Animated Particle System (Electrons drifting)
+      createCarrierParticles(carrierColor);
+
+      updateMosfetChannelGeometry();
+    }
+
+    /* Carrier Particles System */
+    function createCarrierParticles(colorHex) {
+      if (particleSystem) {
+        mosfetGroup.remove(particleSystem);
+      }
+
+      const pGeo = new THREE.BufferGeometry();
+      particlePositions = new Float32Array(NUM_PARTICLES * 3);
+      particleVelocities = [];
+
+      for (let i = 0; i < NUM_PARTICLES; i++) {
+        const x = -4.5 + Math.random() * 9.0;
+        const y = -0.45 + Math.random() * 0.4;
+        const z = -3.2 + Math.random() * 6.4;
+
+        particlePositions[i * 3] = x;
+        particlePositions[i * 3 + 1] = y;
+        particlePositions[i * 3 + 2] = z;
+
+        particleVelocities.push({
+          speed: 0.06 + Math.random() * 0.08,
+          offset: Math.random() * Math.PI * 2
+        });
+      }
+
+      pGeo.setAttribute('position', new THREE.BufferAttribute(particlePositions, 3));
+
+      const pMat = new THREE.PointsMaterial({
+        color: colorHex,
+        size: 0.36,
+        transparent: true,
+        opacity: 0.95,
+        blending: THREE.AdditiveBlending
+      });
+
+      particleSystem = new THREE.Points(pGeo, pMat);
+      mosfetGroup.add(particleSystem);
+    }
+
+    /* Update Dynamic Channel Mesh, Depletion, Fields, and Telemetry based on VGS, VDS, VBS */
+    function updateMosfetChannelGeometry() {
+      if (!channelMesh) return;
+
+      const vgs = appState.vgs;
+      const vds = appState.vds;
+      const vbs = appState.vbs;
+      
+      // Calculate Body-Effect Shifted Vth
+      const phiF = 0.35;
+      const gamma = 0.45;
+      const vth = appState.vth0 + gamma * (Math.sqrt(Math.max(0.01, 2 * phiF - vbs)) - Math.sqrt(2 * phiF));
+      document.getElementById('vthDisp').textContent = vth.toFixed(2) + ' V';
+
+      const vov = vgs - vth;
+      const vdsSat = Math.max(0, vov);
+
+      const isCutoff = vov <= 0.01;
+      const isLinear = !isCutoff && (vds < vdsSat);
+      const isSat = !isCutoff && (vds >= vdsSat);
+
+      // Update badge
+      const badge = document.getElementById('activeModeBadge');
+      const pinchDisp = document.getElementById('pinchDisp');
+
+      // Update Depletion Layer Depth with VBS & VGS
+      // Wdep = sqrt( 2*eps*(phi_s - VBS)/(q*NA) )
+      const deplDepth = 0.8 + Math.sqrt(Math.max(0.1, 0.7 - vbs)) * 0.6;
+      if (depletionMesh) {
+        depletionMesh.scale.set(1.0, deplDepth, 1.0);
+        depletionMesh.position.set(0, -0.45 - 0.45 * deplDepth, 0);
+        depletionMesh.visible = appState.showDepletion;
+      }
+      if (fixedIonsGroup) {
+        fixedIonsGroup.visible = appState.showDepletion;
+      }
+
+      // Update Inversion Channel & Pinch-Off
+      if (isCutoff) {
+        badge.className = 'text-[10px] px-2 py-0.5 rounded font-mono font-bold bg-slate-700/60 text-slate-300 border border-slate-600';
+        badge.textContent = 'CUTOFF REGION';
+        pinchDisp.textContent = 'No Channel (Off)';
+        pinchDisp.className = 'text-xs font-mono font-bold text-slate-400';
+        channelMesh.visible = false;
+        pinchEffectMesh.visible = false;
+      } else if (isLinear) {
+        badge.className = 'text-[10px] px-2 py-0.5 rounded font-mono font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30';
+        badge.textContent = 'TRIODE / LINEAR REGION';
+        pinchDisp.textContent = 'Continuous Channel';
+        pinchDisp.className = 'text-xs font-mono font-bold text-indigo-400';
+        channelMesh.visible = true;
+        pinchEffectMesh.visible = false;
+
+        // Channel thickness scales with overdrive
+        const depth = Math.min(1.0, 0.25 + vov * 0.45);
+        channelMesh.scale.set(1.0, depth, 1.0);
+        channelMesh.position.set(0, -0.15 * depth, 0);
+      } else {
+        badge.className = 'text-[10px] px-2 py-0.5 rounded font-mono font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30';
+        badge.textContent = 'PINCH-OFF / SATURATION';
+        pinchDisp.textContent = 'Pinched at Drain Edge';
+        pinchDisp.className = 'text-xs font-mono font-bold text-amber-400';
+        channelMesh.visible = true;
+        pinchEffectMesh.visible = true;
+
+        const pinchRatio = Math.max(0.3, Math.min(0.88, vdsSat / (vds + 0.01)));
+        channelMesh.scale.set(pinchRatio, 0.5, 1.0);
+        channelMesh.position.set(-2.9 * (1 - pinchRatio), -0.12, 0);
+
+        pinchEffectMesh.scale.set(1 - pinchRatio + 0.1, 0.45, 1.0);
+        pinchEffectMesh.position.set(2.9 * pinchRatio, -0.12, 0);
+      }
+
+      // Update Overlays Visibility
+      if (particleSystem) particleSystem.visible = appState.showCarriers;
+      if (fieldVectorsGroup) fieldVectorsGroup.visible = appState.showFields;
+      if (currentFlowGroup) currentFlowGroup.visible = appState.showCurrent;
+
+      // Update Live Physics Narrative
+      updatePhysicsNarrative(vgs, vds, vbs, vth, vov, vdsSat, isCutoff, isLinear, isSat);
+
+      // Calculations & Telemetry
+      updateCalculations(vgs, vds, vth, vov, vdsSat, isCutoff, isLinear, isSat);
+    }
+
+    /* Live Physics Narrative in 3D HUD */
+    function updatePhysicsNarrative(vgs, vds, vbs, vth, vov, vdsSat, isCutoff, isLinear, isSat) {
+      const textEl = document.getElementById('livePhysicsText');
+      const speedEl = document.getElementById('carrierDriftSpeed');
+
+      if (isCutoff) {
+        textEl.textContent = 'VGS < Vth: Vertical electric field Ey is too weak to invert the surface. Holes are slightly repelled, forming a shallow space-charge depletion zone with fixed negative acceptor ions. No conduction channel exists; current is near-zero (subthreshold leakage).';
+        speedEl.textContent = 'Drift: Thermal Jitter only';
+      } else if (isLinear) {
+        textEl.textContent = `VGS > Vth & VDS < Vov: Strong inversion achieved! A continuous electron sheet connects Source to Drain. Lateral field Ex (${(vds / 0.18).toFixed(1)} kV/cm) drives electrons from Source to Drain (speed ∝ Ex). Conventional current ID flows Drain → Source as a voltage-controlled resistor.`;
+        speedEl.textContent = `Drift: ${(vds * 4.2).toFixed(1)}e6 cm/s`;
+      } else {
+        textEl.textContent = `VDS ≥ Vov: Channel has pinched off at the drain edge! The potential difference across the inversion channel saturates at Vds,sat = ${vdsSat.toFixed(2)}V. Excess drain voltage drops across the purple pinch-off space-charge region, creating an intense electric field that shoots electrons into the drain at maximum saturation velocity!`;
+        speedEl.textContent = 'Drift: 1.0e7 cm/s (vsat limit)';
+      }
+    }
+
+    /* Telemetry calculation */
+    function updateCalculations(vgs, vds, vth, vov, vdsSat, isCutoff, isLinear, isSat) {
+      const W = appState.w;
+      const L = appState.l;
+      const unCox = 200; // uA/V^2
+      const beta = unCox * (W / (L / 1000));
+      const lambda = 0.05;
+
+      let id = 0;
+      let gm = 0;
+
+      if (isCutoff) {
+        id = 0.001;
+        gm = 0;
+      } else if (isLinear) {
+        id = beta * ((vov * vds) - 0.5 * vds * vds) * (1 + lambda * vds);
+        gm = beta * vds * 1e-3;
+      } else {
+        id = 0.5 * beta * (vov * vov) * (1 + lambda * vds);
+        gm = beta * vov * (1 + lambda * vds) * 1e-3;
+      }
+
+      document.getElementById('idDisp').textContent = (id >= 1000) ? (id / 1000).toFixed(2) + ' mA' : id.toFixed(1) + ' μA';
+      document.getElementById('vovDisp').textContent = Math.max(0, vov).toFixed(2) + ' V';
+      document.getElementById('gmDisp').textContent = gm.toFixed(2) + ' mS';
+
+      const formulaEl = document.getElementById('mathFormula');
+      if (isCutoff) {
+        formulaEl.textContent = 'Cutoff: ID ≈ 0 (Subthreshold I_sub ≈ I_0 · exp((VGS - Vth)/(m·VT)))';
+      } else if (isLinear) {
+        formulaEl.textContent = 'Linear: ID = μ·Cox·(W/L)·[(VGS - Vth)·VDS - 0.5·VDS²]·(1 + λ·VDS)';
+      } else {
+        formulaEl.textContent = 'Saturation: ID = 0.5·μ·Cox·(W/L)·(VGS - Vth)²·(1 + λ·VDS) [Pinched]';
+      }
+
+      updateIVChart(vov, vth, beta, lambda);
+    }
+
+    /* Build 3D CMOS Inverter Model */
+    function buildCmosModel() {
+      cmosGroup.clear();
+
+      const subGeo = new THREE.BoxGeometry(16, 3.5, 9);
+      const subMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.8 });
+      const sub = new THREE.Mesh(subGeo, subMat);
+      sub.position.set(0, -1.75, 0);
+      cmosGroup.add(sub);
+
+      const nWellGeo = new THREE.BoxGeometry(7.6, 2.5, 8.2);
+      const nWellMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.6 });
+      const nWell = new THREE.Mesh(nWellGeo, nWellMat);
+      nWell.position.set(4, -1.25, 0);
+      cmosGroup.add(nWell);
+
+      const stiGeo = new THREE.BoxGeometry(1.6, 2.0, 8.4);
+      const stiMat = new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.3, transparent: true, opacity: 0.7 });
+      const sti = new THREE.Mesh(stiGeo, stiMat);
+      sti.position.set(0, -1.0, 0);
+      cmosGroup.add(sti);
+
+      const diffMatN = new THREE.MeshStandardMaterial({ color: 0x10b981, roughness: 0.3 });
+      const nmosSrc = new THREE.Mesh(new THREE.BoxGeometry(2.0, 1.2, 5.0), diffMatN);
+      nmosSrc.position.set(-5.5, -0.6, 0);
+      cmosGroup.add(nmosSrc);
+
+      const nmosDrn = new THREE.Mesh(new THREE.BoxGeometry(2.0, 1.2, 5.0), diffMatN);
+      nmosDrn.position.set(-2.0, -0.6, 0);
+      cmosGroup.add(nmosDrn);
+
+      const diffMatP = new THREE.MeshStandardMaterial({ color: 0xec4899, roughness: 0.3 });
+      const pmosDrn = new THREE.Mesh(new THREE.BoxGeometry(2.0, 1.2, 5.0), diffMatP);
+      pmosDrn.position.set(2.0, -0.6, 0);
+      cmosGroup.add(pmosDrn);
+
+      const pmosSrc = new THREE.Mesh(new THREE.BoxGeometry(2.0, 1.2, 5.0), diffMatP);
+      pmosSrc.position.set(5.5, -0.6, 0);
+      cmosGroup.add(pmosSrc);
+
+      const polyLineGeo = new THREE.BoxGeometry(13.0, 0.8, 1.8);
+      const polyLineMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, roughness: 0.3, metalness: 0.7 });
+      const polyLine = new THREE.Mesh(polyLineGeo, polyLineMat);
+      polyLine.position.set(0, 0.6, 0);
+      cmosGroup.add(polyLine);
+
+      const vddRail = new THREE.Mesh(new THREE.BoxGeometry(3.0, 0.4, 6.0), new THREE.MeshStandardMaterial({ color: 0xef4444, metalness: 0.8 }));
+      vddRail.position.set(5.5, 1.5, 0);
+      cmosGroup.add(vddRail);
+
+      const gndRail = new THREE.Mesh(new THREE.BoxGeometry(3.0, 0.4, 6.0), new THREE.MeshStandardMaterial({ color: 0x3b82f6, metalness: 0.8 }));
+      gndRail.position.set(-5.5, 1.5, 0);
+      cmosGroup.add(gndRail);
+
+      const outRail = new THREE.Mesh(new THREE.BoxGeometry(6.5, 0.4, 1.8), new THREE.MeshStandardMaterial({ color: 0x10b981, metalness: 0.8 }));
+      outRail.position.set(0, 1.5, 0);
+      cmosGroup.add(outRail);
+    }
+
+    /* Build 3D VLSI Fabrication Stepper Model (12 Steps) */
+    function buildFabModel() {
+      fabGroup.clear();
+
+      const waferGeo = new THREE.CylinderGeometry(8, 8, 1.5, 32);
+      const waferMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.3, metalness: 0.4 });
+      const wafer = new THREE.Mesh(waferGeo, waferMat);
+      wafer.position.set(0, -1.0, 0);
+      fabGroup.add(wafer);
+
+      const oxLayerGeo = new THREE.CylinderGeometry(7.8, 7.8, 0.3, 32);
+      const oxLayerMat = new THREE.MeshStandardMaterial({ color: 0x0284c7, transparent: true, opacity: 0.85 });
+      const oxLayer = new THREE.Mesh(oxLayerGeo, oxLayerMat);
+      oxLayer.position.set(0, -0.1, 0);
+      oxLayer.name = 'fabOxide';
+      fabGroup.add(oxLayer);
+
+      const prLayerGeo = new THREE.BoxGeometry(10, 0.4, 10);
+      const prLayerMat = new THREE.MeshStandardMaterial({ color: 0xa855f7, transparent: true, opacity: 0.75 });
+      const prLayer = new THREE.Mesh(prLayerGeo, prLayerMat);
+      prLayer.position.set(0, 0.3, 0);
+      prLayer.name = 'fabPhotoresist';
+      fabGroup.add(prLayer);
+
+      const polyPattern = new THREE.Mesh(new THREE.BoxGeometry(4.0, 0.8, 6.0), new THREE.MeshStandardMaterial({ color: 0xf59e0b, metalness: 0.7 }));
+      polyPattern.position.set(0, 0.8, 0);
+      polyPattern.name = 'fabPoly';
+      fabGroup.add(polyPattern);
+
+      const metalLayer = new THREE.Mesh(new THREE.BoxGeometry(8.0, 0.5, 8.0), new THREE.MeshStandardMaterial({ color: 0x10b981, metalness: 0.8 }));
+      metalLayer.position.set(0, 1.6, 0);
+      metalLayer.name = 'fabMetal';
+      fabGroup.add(metalLayer);
+
+      updateFabModelForStep(appState.fabStep);
+    }
+
+    /* Exact 12-Step Foundry Process Data */
+    const exact12Steps = [
+      {
+        step: 1,
+        title: "1. RCA Chemical Cleaning & Substrate Prep",
+        desc: "300mm <100> P-type Boron-doped wafer undergoes Standard Clean 1 (SC-1) and SC-2 to strip organic films, native oxide, and metallic ionic residues prior to high-temperature thermal processing.",
+        chem: "SC-1 (5:1:1 H₂O:NH₄OH:H₂O₂) @ 75°C → HF Dip (1:50) → SC-2 (6:1:1 H₂O:HCl:H₂O₂) @ 80°C",
+        equip: "Automated Wet Clean Bench / Megasonic Batch Cleaning Station (Tokyo Electron / SCREEN)",
+        specs: "Wafer Diameter: 300 mm | Thickness: 775 μm | Doping: Boron NA ≈ 10¹⁵ cm⁻³ (10 Ω·cm)"
+      },
+      {
+        step: 2,
+        title: "2. Twin-Well Ion Implantation & Drive-in",
+        desc: "Phosphorus ions implanted to create N-wells for PMOS transistors, followed by Boron implantation for P-wells. High-temperature thermal drive-in diffuses dopants deep into the silicon lattice.",
+        chem: "Pre-implant screen oxide (SiO₂, 15nm grown via dry O₂ @ 950°C) to prevent channeling",
+        equip: "High-Current Ion Implanter (Applied Materials Varian VIISta) + Vertical Thermal Reactor",
+        specs: "Phosphorus: 150 keV, Dose 3e13 cm⁻² | Drive-in Anneal: 1150°C for 4 hours in N₂"
+      },
+      {
+        step: 3,
+        title: "3. Shallow Trench Isolation (STI)",
+        desc: "Replaces obsolete LOCOS isolation. Reactive Ion Etching cuts 300nm deep vertical trenches between active areas, filled with CVD SiO₂ and planarized using Chemical-Mechanical Polishing (CMP).",
+        chem: "Pad Oxide (10nm) + LPCVD Si₃N₄ (120nm) mask → Cl₂/HBr plasma trench etch → TEOS oxide fill",
+        equip: "Anisotropic RIE Etcher (Lam Research Kiyo) + CMP Polisher (Applied Materials Reflexion LK)",
+        specs: "Trench Depth: 320 nm | Taper Angle: 85° | Oxide Dishing: < 5 nm after CMP"
+      },
+      {
+        step: 4,
+        title: "4. Well & Threshold (Vth) Adjustment Implants",
+        desc: "Multiple energetic ion implantations calibrate transistor threshold voltages. Retrograde well implants suppress latch-up and punch-through, while shallow channel implants tailor exact Vth targets.",
+        chem: "Photoresist masking block for NMOS vs PMOS selective threshold adjustment",
+        equip: "Medium-Current Ion Implanter (Axcelis Purion M)",
+        specs: "Boron / BF₂ / Indium species | Energy: 15-40 keV | Target Vth: 0.60V (standard), 0.40V (low-power)"
+      },
+      {
+        step: 5,
+        title: "5. High-k Gate Dielectric Deposition",
+        desc: "Atomic Layer Deposition (ALD) deposits an atomically smooth Hafnium Dioxide (HfO₂) dielectric over a 0.5nm interfacial chemical oxide layer, eliminating quantum tunneling leakage current.",
+        chem: "ALD alternating cycles of HfCl₄ + H₂O vapor or TEMAHf + O₃ precursor @ 300°C",
+        equip: "Atomic Layer Deposition Cluster Tool (ASM International Pulsar / Tokyo Electron)",
+        specs: "EOT (Equivalent Oxide Thickness): 1.1 nm | Physical HfO₂ thickness: ~2.5 nm | εr ≈ 25"
+      },
+      {
+        step: 6,
+        title: "6. Polysilicon / Metal Gate Stack CVD",
+        desc: "Chemical Vapor Deposition deposits work-function tuning metals (TiN for PMOS, TiAl/TaN for NMOS) capped with heavily doped Polysilicon or Tungsten gate electrode material.",
+        chem: "CVD SiH₄ (silane) pyrolysis @ 620°C for Poly-Si or ALD TiCl₄ + NH₃ for TiN metal gate",
+        equip: "LPCVD Furnace / Metal PVD Sputter Cluster (Applied Materials Endura)",
+        specs: "Gate Thickness: 60-80 nm | TiN Work function: 4.8 eV (PMOS), TiAl: 4.1 eV (NMOS)"
+      },
+      {
+        step: 7,
+        title: "7. Photolithography & Gate Reactive Ion Etching",
+        desc: "EUV (13.5nm) or 193nm Immersion lithography prints sub-nanometer gate patterns into photoresist. Anisotropic plasma etching sculpts vertical gate electrodes with atomic line-edge roughness.",
+        chem: "ArFi immersion / EUV chemically amplified resist + HBr/Cl₂/O₂ selective plasma chemistry",
+        equip: "EUV Scanner (ASML Twinscan EXE/NXE) + Atomic Layer Etch / ALE tool (Lam Research)",
+        specs: "Critical Dimension (CD): 18 nm | CD Uniformity: 3σ < 0.8 nm across 300mm wafer"
+      },
+      {
+        step: 8,
+        title: "8. Self-Aligned Lightly Doped Drain (LDD) Implant",
+        desc: "Shallow, low-energy ion implantation self-aligned to gate edges. Creates graded doping junctions that alleviate peak lateral electric fields (Ex) and suppress Hot Carrier Injection (HCI).",
+        chem: "Low-energy Arsenic (NMOS) and BF₂ (PMOS) implantation self-aligned to gate edges",
+        equip: "Ultra-Low Energy (ULE) Ion Implanter (Applied Materials VIISta ULE)",
+        specs: "Arsenic Energy: 2-5 keV, Dose 1e14 cm⁻² | Junction Depth Xj: < 15 nm"
+      },
+      {
+        step: 9,
+        title: "9. Dielectric Sidewall Spacer Formation",
+        desc: "Conformal deposition of Silicon Nitride (Si₃N₄) followed by directional anisotropic dry etching. Spacers shield the LDD extensions during the upcoming intense Source/Drain implant.",
+        chem: "LPCVD SiH₂Cl₂ + NH₃ @ 700°C to deposit 40nm Si₃N₄, followed by anisotropic CF₄/CHF₃ etch",
+        equip: "PECVD / ALD Spacer Deposition Chamber + Anisotropic RIE Etcher",
+        specs: "Spacer Width: 25-35 nm | Selectivity: >50:1 Si₃N₄ to underlying silicon substrate"
+      },
+      {
+        step: 10,
+        title: "10. Deep Source / Drain Implantation & RTA",
+        desc: "Heavy ion implantation forms low-resistance N+ and P+ contacts. Flash laser annealing or Rapid Thermal Annealing (RTA) at 1050°C activates dopants with minimal transient-enhanced diffusion.",
+        chem: "N+ Implant: Arsenic/Phosphorus 40 keV (3e15 cm⁻²); P+ Implant: Boron 15 keV (3e15 cm⁻²)",
+        equip: "Millisecond Flash / Dynamic Surface Laser Annealer (Screen / Applied Materials Astra)",
+        specs: "Peak Temperature: 1050°C spike (< 1.5 seconds) | Dopant Activation: > 90% | Sheet Res: < 80 Ω/sq"
+      },
+      {
+        step: 11,
+        title: "11. Self-Aligned Silicidation (Salicide)",
+        desc: "Sputtering of thin Nickel (Ni) or Cobalt (Co) followed by two-step RTP anneal forms low-resistivity NiSi on Source, Drain, and Gate. Unreacted metal is chemically etched away.",
+        chem: "10nm PVD Nickel + RTP-1 @ 350°C → Selective wet strip (H₂SO₄:H₂O₂) → RTP-2 @ 500°C (NiSi)",
+        equip: "Integrated Sputter/RTP Cluster Tool",
+        specs: "Silicide Phase: Nickel Monosilicide (NiSi) | Contact Resistivity: < 1e-8 Ω·cm²"
+      },
+      {
+        step: 12,
+        title: "12. Multi-Level Copper Dual-Damascene BEOL",
+        desc: "Pre-metal dielectric (ILD0) deposited and polished. Contact holes etched and plugged with Tungsten (W). 10-15 layers of Copper dual-damascene wiring route clock, signals, and power.",
+        chem: "CVD Ti/TiN barrier + Tungsten CVD (WF₆ + SiH₄/H₂) → Cu electroplating (CuSO₄ bath) + Cu-CMP",
+        equip: "Dual-Damascene Electroplating Tool + High-Throughput CMP Cluster",
+        specs: "Interconnect Metal: Copper (Cu) + Low-k dielectric (k < 2.5) | Metal Layers: 12-16 levels"
+      }
+    ];
+
+    /* Update Fab Model for 12 Steps */
+    function updateFabModelForStep(step) {
+      const ox = fabGroup.getObjectByName('fabOxide');
+      const pr = fabGroup.getObjectByName('fabPhotoresist');
+      const poly = fabGroup.getObjectByName('fabPoly');
+      const metal = fabGroup.getObjectByName('fabMetal');
+
+      if (!ox || !pr || !poly || !metal) return;
+
+      ox.visible = (step >= 2);
+      pr.visible = (step === 3 || step === 4 || step === 7);
+      poly.visible = (step >= 6);
+      metal.visible = (step >= 11);
+
+      const s = exact12Steps[step - 1];
+      document.getElementById('fabStepBadge').textContent = 'Step ' + step + ' / 12';
+      document.getElementById('fabStepNum').textContent = step;
+      document.getElementById('fabStepTitle').textContent = s.title;
+      document.getElementById('fabStepBody').textContent = s.desc;
+      document.getElementById('fabStepChemistry').textContent = s.chem;
+      document.getElementById('fabStepEquip').textContent = s.equip;
+      document.getElementById('fabStepSpecs').innerHTML = '<div>' + s.specs.split(' | ').join('</div><div>') + '</div>';
+
+      // Update 12 dots
+      const dotsContainer = document.getElementById('fabDots');
+      dotsContainer.innerHTML = '';
+      for (let i = 1; i <= 12; i++) {
+        const dot = document.createElement('button');
+        dot.className = 'w-2 h-2 rounded-full transition-all ' + (i === step ? 'bg-indigo-500 scale-125' : 'bg-slate-700 hover:bg-slate-500');
+        dot.onclick = () => { appState.fabStep = i; updateFabModelForStep(i); };
+        dotsContainer.appendChild(dot);
+      }
+    }
+
+    /* Industry Application Recommendations */
+    const industryAppRecommendations = {
+      hpc: {
+        typeBadge: "3D FinFET & GAAFET (N3/N2)",
+        title: "TSMC N3E / Intel 18A RibbonFET Architecture",
+        desc: "Provides the highest transistor packing density (>160 MTr/mm²), ultra-steep subthreshold swing (S < 65 mV/dec), and maximum clock frequency for high-density compute cores. Nanosheet GAA allows tuning sheet widths (Weff) for optimal performance-to-power trade-offs.",
+        chips: "Commercial Chips: NVIDIA H100 / Blackwell B200, Apple M4 / A18 Pro, AMD EPYC Turin, Google TPU v5p"
+      },
+      auto: {
+        typeBadge: "Automotive-Grade Planar BCD & SiC",
+        title: "28nm/40nm Automotive Planar BCD + SiC Power Trench",
+        desc: "Automotive engine ECUs, powertrain controllers, and brake modules demand zero-defect AEC-Q100 Grade 0 reliability (-40°C to +150°C), 15+ year operational lifespans, and tolerance to high-voltage transients. Planar BCD combines Bipolar power, CMOS logic, and DMOS switches on one chip.",
+        chips: "Commercial Chips: NXP S32G Vehicle Processor, STMicroelectronics Stellar, Infineon AURIX TC4x, Tesla SiC Inverter"
+      },
+      rf: {
+        typeBadge: "22FDX FD-SOI & SiGe BiCMOS",
+        title: "GlobalFoundries 22FDX / TowerJazz SiGe BiCMOS",
+        desc: "5G mmWave and 6G satellite transceivers require extremely high cut-off frequencies (fT > 350 GHz), low noise figures (NF < 1.5 dB), and integrated RF switches. Thin-BOX FD-SOI and SiGe HBTs deliver outstanding RF linearity and power efficiency without burning battery power.",
+        chips: "Commercial Chips: Qualcomm 5G mmWave Front-End, Skyworks SKY5 FEM, NXP 77GHz Automotive Radar Transceivers"
+      },
+      iot: {
+        typeBadge: "22nm / 28nm FD-SOI with Back-Gate Bias",
+        title: "STMicroelectronics / GlobalFoundries FD-SOI",
+        desc: "Enables ultra-low voltage operation (down to 0.4V) and adaptive body biasing to shift threshold voltage dynamically: reverse body bias (RBB) slashes standby leakage to picoamps during sleep, while forward body bias (FBB) boosts clock speed on demand.",
+        chips: "Commercial Chips: Apple Watch Ultra GPS/Sensor Hub, Sony GPS GNSS CXD5605, Ambiq Apollo4 Blue SoC"
+      },
+      space: {
+        typeBadge: "Radiation-Hardened FD-SOI / SOS",
+        title: "BAE Systems / Honeywell Rad-Hard SOI & Bulk",
+        desc: "Cosmic rays and solar proton events cause Single-Event Upsets (SEU), latch-up, and Total Ionizing Dose (TID) failures. The thin silicon film on buried oxide in FD-SOI eliminates substrate charge collection volume, preventing catastrophic latch-up in space.",
+        chips: "Commercial Chips: NASA James Webb Space Telescope BAE RAD750, Mars Perseverance Rover RAD5548, Vorago VA416x0"
+      },
+      power: {
+        typeBadge: "Wide-Bandgap GaN-on-Si & SiC MOSFETs",
+        title: "Wolfspeed / Infineon CoolSiC & EPC GaN",
+        desc: "Silicon hits breakdown limits at 600V. Silicon Carbide (SiC) and Gallium Nitride (GaN) have 10x higher breakdown electric field (3 MV/cm) and 3x higher thermal conductivity, slashing switching losses by 80% in electric vehicle inverters and fast chargers.",
+        chips: "Commercial Chips: Tesla Model 3 STMicro SiC Module, Infineon CoolGaN, Navitas GaNFast Fast-Charger ICs"
+      }
+    };
+
+    function selectIndustryApp(appKey) {
+      appState.selectedApp = appKey;
+      const data = industryAppRecommendations[appKey];
+      if (!data) return;
+
+      document.querySelectorAll('.app-btn').forEach(btn => {
+        if (btn.dataset.app === appKey) {
+          btn.className = 'app-btn p-2 rounded-lg bg-indigo-900/40 border border-indigo-700/60 hover:bg-indigo-800/60 text-left transition';
+        } else {
+          btn.className = 'app-btn p-2 rounded-lg bg-slate-900 border border-slate-800 hover:bg-slate-800 text-left transition';
+        }
+      });
+
+      document.getElementById('recTypeBadge').textContent = data.typeBadge;
+      document.getElementById('recTitle').textContent = data.title;
+      document.getElementById('recDesc').textContent = data.desc;
+      document.getElementById('recChips').textContent = data.chips;
+    }
+
+    /* Build 3D Energy Band Model */
+    function buildBandModel() {
+      bandGroup.clear();
+
+      const length = 12;
+      const width = 8;
+      const res = 24;
+
+      function createBandSurface(colorHex, yOffset, opacity = 0.85) {
+        const geo = new THREE.PlaneGeometry(length, width, res, res);
+        const mat = new THREE.MeshStandardMaterial({
+          color: colorHex,
+          roughness: 0.3,
+          wireframe: false,
+          side: THREE.DoubleSide,
+          transparent: true,
+          opacity: opacity,
+          emissive: colorHex,
+          emissiveIntensity: 0.2
+        });
+        const mesh = new THREE.Mesh(geo, mat);
+        mesh.rotation.x = -Math.PI / 2;
+        mesh.position.y = yOffset;
+        return mesh;
+      }
+
+      const ecMesh = createBandSurface(0x38bdf8, 1.8);
+      ecMesh.name = 'ecBand';
+      bandGroup.add(ecMesh);
+
+      const eiMesh = createBandSurface(0xf59e0b, 0.9, 0.4);
+      eiMesh.name = 'eiBand';
+      bandGroup.add(eiMesh);
+
+      const evMesh = createBandSurface(0xf43f5e, 0.0);
+      evMesh.name = 'evBand';
+      bandGroup.add(evMesh);
+
+      const efMesh = createBandSurface(0x10b981, 0.9, 0.5);
+      efMesh.name = 'efBand';
+      bandGroup.add(efMesh);
+
+      updateBandGeometry();
+    }
+
+    /* Update Band Diagram Surface Bending based on VG */
+    function updateBandGeometry() {
+      const ec = bandGroup.getObjectByName('ecBand');
+      const ei = bandGroup.getObjectByName('eiBand');
+      const ev = bandGroup.getObjectByName('evBand');
+      if (!ec || !ei || !ev) return;
+
+      const vg = appState.bandVG;
+      const bend = vg * 1.2;
+
+      function bendPlane(mesh, baseHeight) {
+        const pos = mesh.geometry.attributes.position;
+        for (let i = 0; i < pos.count; i++) {
+          const x = pos.getX(i);
+          const depthFactor = Math.exp(-(x + 6) / 2.5);
+          pos.setZ(i, -bend * depthFactor);
+        }
+        pos.needsUpdate = true;
+        mesh.geometry.computeVertexNormals();
+      }
+
+      bendPlane(ec, 1.8);
+      bendPlane(ei, 0.9);
+      bendPlane(ev, 0.0);
+
+      const badge = document.getElementById('bandRegimeBadge');
+      const desc = document.getElementById('bandRegimeDesc');
+      if (vg < -0.4) {
+        badge.textContent = 'ACCUMULATION';
+        badge.className = 'font-mono font-bold text-rose-400';
+        desc.textContent = 'Gate bias attracts majority holes to the surface, bending energy bands upwards.';
+      } else if (vg < 0.5) {
+        badge.textContent = 'DEPLETION';
+        badge.className = 'font-mono font-bold text-amber-400';
+        desc.textContent = 'Positive gate bias pushes holes away from the interface, leaving negative fixed ionized acceptor atoms.';
+      } else {
+        badge.textContent = 'STRONG INVERSION';
+        badge.className = 'font-mono font-bold text-emerald-400';
+        desc.textContent = 'Conduction band Ec dips down below the Fermi level EF, creating an inversion layer of mobile electrons.';
+      }
+
+      updateBandChart(vg);
+    }
+
+    /* Exploded View Slider Handler */
+    function applyExplode(percent) {
+      const factor = percent / 100;
+      explodables.forEach(item => {
+        item.mesh.position.copy(item.basePos).addScaledVector(item.dir, item.factor * factor);
+      });
+      document.getElementById('explodeVal').textContent = percent + '%';
+    }
+
+    /* Cutaway View Toggle */
+    function applyCutaway() {
+      if (renderer) {
+        renderer.localClippingEnabled = appState.cutawayEnabled;
+      }
+    }
+
+    /* Update Scene Visibility on Tab Switch */
+    function updateSceneVisibility() {
+      mosfetGroup.visible = (appState.activeTab === 'mosfet' || appState.activeTab === 'fabtypes');
+      cmosGroup.visible = (appState.activeTab === 'cmos');
+      fabGroup.visible = (appState.activeTab === 'fabrication');
+      bandGroup.visible = (appState.activeTab === 'energy' || appState.activeTab === 'theory');
+
+      const titleEl = document.getElementById('sceneTitle');
+      const visToggles = document.getElementById('visToggles');
+
+      if (appState.activeTab === 'mosfet') {
+        titleEl.textContent = 'MOSFET 3D Cutaway: Field, Charge & Current Flow';
+        camera.position.set(16, 12, 20);
+        visToggles.classList.remove('hidden');
+      } else if (appState.activeTab === 'fabtypes') {
+        titleEl.textContent = 'Fabrication Technologies Benchmarking & Industry Hub';
+        camera.position.set(16, 12, 20);
+        visToggles.classList.add('hidden');
+      } else if (appState.activeTab === 'cmos') {
+        titleEl.textContent = 'CMOS Inverter 3D Twin-Well Layout & Conduction';
+        camera.position.set(0, 18, 22);
+        visToggles.classList.add('hidden');
+      } else if (appState.activeTab === 'fabrication') {
+        titleEl.textContent = 'Exact 12-Step Silicon Wafer Foundry Processing';
+        camera.position.set(14, 14, 16);
+        visToggles.classList.add('hidden');
+      } else {
+        titleEl.textContent = '3D Semiconductor Band Bending & Interface Potential';
+        camera.position.set(12, 10, 16);
+        visToggles.classList.add('hidden');
+      }
+      controls.target.set(0, 0, 0);
+      controls.update();
+    }
+
+    /* Raycaster for Interactive 3D Inspection */
+    function setupRaycaster() {
+      const raycaster = new THREE.Raycaster();
+      const mouse = new THREE.Vector2();
+
+      renderer.domElement.addEventListener('pointerdown', (e) => {
+        const rect = renderer.domElement.getBoundingClientRect();
+        mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+        mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+        raycaster.setFromCamera(mouse, camera);
+        const currentGroup = (appState.activeTab === 'cmos') ? cmosGroup : (appState.activeTab === 'fabrication' ? fabGroup : mosfetGroup);
+        const intersects = raycaster.intersectObjects(currentGroup.children, true);
+
+        if (intersects.length > 0) {
+          const hit = intersects[0].object;
+          if (hit.userData && hit.userData.name) {
+            showInspector(hit.userData);
+          }
+        }
+      });
+    }
+
+    function showInspector(data) {
+      const card = document.getElementById('inspectorCard');
+      document.getElementById('inspectTitle').textContent = data.name;
+      document.getElementById('inspectDesc').textContent = data.desc;
+      document.getElementById('inspectProps').innerHTML = data.specs ? '<div>' + data.specs.split(' | ').join('</div><div>') + '</div>' : '';
+      card.classList.remove('hidden');
+    }
+
+    /* Resize Handler */
+    function onWindowResize() {
+      if (!renderer || !camera) return;
+      const w = container.clientWidth || 800;
+      const h = container.clientHeight || 500;
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+      renderer.setSize(w, h);
+    }
+
+    /* Animation Loop */
+    let clock = new THREE.Clock();
+
+    function animate() {
+      requestAnimationFrame(animate);
+      const delta = clock.getDelta();
+
+      controls.update();
+
+      // Animate Carrier Particles in MOSFET Mode
+      if ((appState.activeTab === 'mosfet' || appState.activeTab === 'fabtypes') && particleSystem && particleSystem.visible) {
+        const isCutoff = (appState.vgs - appState.vth0) <= 0;
+        const currentScale = isCutoff ? 0.04 : Math.max(0.2, Math.min(3.0, appState.vds * 1.5));
+        const pos = particleSystem.geometry.attributes.position.array;
+
+        for (let i = 0; i < NUM_PARTICLES; i++) {
+          if (isCutoff) {
+            pos[i * 3] += (Math.random() - 0.5) * 0.04;
+            pos[i * 3 + 1] += (Math.random() - 0.5) * 0.02;
+            pos[i * 3 + 2] += (Math.random() - 0.5) * 0.04;
+          } else {
+            const speed = particleVelocities[i].speed * currentScale;
+            pos[i * 3] += speed;
+
+            // In saturation, accelerate across the pinch-off zone!
+            if (appState.vds >= (appState.vgs - appState.vth0) && pos[i * 3] > 0) {
+              pos[i * 3] += speed * 2.0;
+            }
+
+            // Recycle past drain back to source
+            if (pos[i * 3] > 5.5) {
+              pos[i * 3] = -5.5 + Math.random() * 1.0;
+              pos[i * 3 + 1] = -0.45 + Math.random() * 0.35;
+              pos[i * 3 + 2] = -3.2 + Math.random() * 6.4;
+            }
+          }
+        }
+        particleSystem.geometry.attributes.position.needsUpdate = true;
+      }
+
+      renderer.render(scene, camera);
+    }
+
+    /* Chart.js Setup */
+    function initCharts() {
+      const ctxIV = document.getElementById('chartIV').getContext('2d');
+      chartIV = new Chart(ctxIV, {
+        type: 'line',
+        data: {
+          datasets: [
+            { label: 'VGS = 1.0V', data: [], borderColor: '#64748b', borderWidth: 1.5, pointRadius: 0 },
+            { label: 'VGS = 1.4V', data: [], borderColor: '#818cf8', borderWidth: 1.5, pointRadius: 0 },
+            { label: 'VGS = 1.8V', data: [], borderColor: '#38bdf8', borderWidth: 1.5, pointRadius: 0 },
+            { label: 'VGS = 2.2V', data: [], borderColor: '#34d399', borderWidth: 1.5, pointRadius: 0 },
+            {
+              label: 'Operating Point',
+              data: [{ x: appState.vds, y: 1.0 }],
+              borderColor: '#10b981',
+              backgroundColor: '#10b981',
+              pointRadius: 6,
+              pointHoverRadius: 8,
+              showLine: false
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          animation: false,
+          scales: {
+            x: {
+              type: 'linear',
+              min: 0,
+              max: 2.5,
+              title: { display: true, text: 'VDS (V)', color: '#94a3b8', font: { size: 10 } },
+              grid: { color: '#1e293b' },
+              ticks: { color: '#94a3b8', font: { size: 10 } }
+            },
+            y: {
+              min: 0,
+              max: 5.0,
+              title: { display: true, text: 'ID (mA)', color: '#94a3b8', font: { size: 10 } },
+              grid: { color: '#1e293b' },
+              ticks: { color: '#94a3b8', font: { size: 10 } }
+            }
+          },
+          plugins: { legend: { display: false } }
+        }
+      });
+
+      const ctxVTC = document.getElementById('chartVTC').getContext('2d');
+      const vtcData = [];
+      for (let v = 0; v <= 1.8; v += 0.05) {
+        const vout = 1.8 / (1 + Math.exp(12 * (v - 0.9)));
+        vtcData.push({ x: v, y: vout });
+      }
+
+      chartVTC = new Chart(ctxVTC, {
+        type: 'line',
+        data: {
+          datasets: [
+            { label: 'VTC Curve', data: vtcData, borderColor: '#38bdf8', borderWidth: 2, pointRadius: 0 },
+            { label: 'Active Point', data: [{ x: 0, y: 1.8 }], borderColor: '#10b981', backgroundColor: '#10b981', pointRadius: 6, showLine: false }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            x: {
+              type: 'linear',
+              min: 0,
+              max: 1.8,
+              title: { display: true, text: 'Vin (V)', color: '#94a3b8', font: { size: 10 } },
+              grid: { color: '#1e293b' },
+              ticks: { color: '#94a3b8', font: { size: 10 } }
+            },
+            y: {
+              min: 0,
+              max: 1.8,
+              title: { display: true, text: 'Vout (V)', color: '#94a3b8', font: { size: 10 } },
+              grid: { color: '#1e293b' },
+              ticks: { color: '#94a3b8', font: { size: 10 } }
+            }
+          },
+          plugins: { legend: { display: false } }
+        }
+      });
+
+      const ctxBands = document.getElementById('chartBands').getContext('2d');
+      chartBands = new Chart(ctxBands, {
+        type: 'line',
+        data: {
+          datasets: [
+            { label: 'Ec (Conduction)', data: [], borderColor: '#38bdf8', borderWidth: 2, pointRadius: 0 },
+            { label: 'Ei (Intrinsic)', data: [], borderColor: '#f59e0b', borderDash: [4, 4], borderWidth: 1.5, pointRadius: 0 },
+            { label: 'Ev (Valence)', data: [], borderColor: '#f43f5e', borderWidth: 2, pointRadius: 0 },
+            { label: 'EF (Fermi)', data: [], borderColor: '#10b981', borderWidth: 1.5, pointRadius: 0 }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          animation: false,
+          scales: {
+            x: {
+              type: 'linear',
+              min: 0,
+              max: 10,
+              title: { display: true, text: 'Depth into Silicon x (nm)', color: '#94a3b8', font: { size: 10 } },
+              grid: { color: '#1e293b' },
+              ticks: { color: '#94a3b8', font: { size: 10 } }
+            },
+            y: {
+              min: -1.5,
+              max: 2.5,
+              title: { display: true, text: 'Energy (eV)', color: '#94a3b8', font: { size: 10 } },
+              grid: { color: '#1e293b' },
+              ticks: { color: '#94a3b8', font: { size: 10 } }
+            }
+          },
+          plugins: { legend: { display: false } }
+        }
+      });
+
+      updateIVChart(appState.vgs - appState.vth0, appState.vth0, 200 * (4.0 / 0.18), 0.05);
+      updateBandChart(appState.bandVG);
+    }
+
+    /* Update IV Chart */
+    function updateIVChart(vov, vth, beta, lambda) {
+      if (!chartIV) return;
+
+      const vgsCurves = [1.0, 1.4, 1.8, 2.2];
+      vgsCurves.forEach((gateV, idx) => {
+        const ov = gateV - vth;
+        const curveData = [];
+        for (let v = 0; v <= 2.5; v += 0.1) {
+          let curr = 0;
+          if (ov > 0) {
+            if (v < ov) {
+              curr = beta * (ov * v - 0.5 * v * v) * (1 + lambda * v) * 1e-3;
+            } else {
+              curr = 0.5 * beta * (ov * ov) * (1 + lambda * v) * 1e-3;
+            }
+          }
+          curveData.push({ x: v, y: Math.max(0, curr) });
+        }
+        chartIV.data.datasets[idx].data = curveData;
+      });
+
+      const currentID = parseFloat(document.getElementById('idDisp').textContent) || 0;
+      chartIV.data.datasets[4].data = [{ x: appState.vds, y: currentID }];
+      chartIV.update();
+    }
+
+    /* Update CMOS State */
+    function updateCmosState(vin) {
+      appState.vin = vin;
+      const vout = 1.8 / (1 + Math.exp(12 * (vin - 0.9)));
+      const voutDisp = document.getElementById('voutDisp');
+      const voutLogic = document.getElementById('voutLogicDisp');
+      const pmosStatus = document.getElementById('pmosStatus');
+      const nmosStatus = document.getElementById('nmosStatus');
+      const iddDisp = document.getElementById('iddDisp');
+
+      voutDisp.textContent = vout.toFixed(2) + ' V';
+      if (vout > 1.2) {
+        voutLogic.textContent = "LOGIC '1'";
+        voutLogic.className = 'text-xs px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold';
+      } else if (vout < 0.6) {
+        voutLogic.textContent = "LOGIC '0'";
+        voutLogic.className = 'text-xs px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-300 font-bold';
+      } else {
+        voutLogic.textContent = 'METASTABLE';
+        voutLogic.className = 'text-xs px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-bold';
+      }
+
+      const diff = Math.abs(vin - 0.9);
+      const iddPeak = Math.max(0, 450 * Math.exp(-diff * diff / 0.04));
+      iddDisp.textContent = iddPeak.toFixed(1) + ' μA';
+
+      if (vin < 0.5) {
+        pmosStatus.textContent = 'ON (Linear Triode)';
+        pmosStatus.className = 'font-mono text-emerald-400 font-bold mt-0.5';
+        nmosStatus.textContent = 'OFF (Cutoff)';
+        nmosStatus.className = 'font-mono text-rose-400 font-bold mt-0.5';
+      } else if (vin > 1.3) {
+        pmosStatus.textContent = 'OFF (Cutoff)';
+        pmosStatus.className = 'font-mono text-rose-400 font-bold mt-0.5';
+        nmosStatus.textContent = 'ON (Linear Triode)';
+        nmosStatus.className = 'font-mono text-emerald-400 font-bold mt-0.5';
+      } else {
+        pmosStatus.textContent = 'ON (Saturation)';
+        pmosStatus.className = 'font-mono text-amber-400 font-bold mt-0.5';
+        nmosStatus.textContent = 'ON (Saturation)';
+        nmosStatus.className = 'font-mono text-amber-400 font-bold mt-0.5';
+      }
+
+      if (chartVTC) {
+        chartVTC.data.datasets[1].data = [{ x: vin, y: vout }];
+        chartVTC.update();
+      }
+    }
+
+    /* Update Band Chart */
+    function updateBandChart(vg) {
+      if (!chartBands) return;
+      const ecData = [];
+      const eiData = [];
+      const evData = [];
+      const efData = [];
+
+      const bend = vg * 0.8;
+      for (let x = 0; x <= 10; x += 0.5) {
+        const decay = Math.exp(-x / 2.0);
+        const shift = -bend * decay;
+        ecData.push({ x: x, y: 1.4 + shift });
+        eiData.push({ x: x, y: 0.7 + shift });
+        evData.push({ x: x, y: 0.0 + shift });
+        efData.push({ x: x, y: 0.7 });
+      }
+
+      chartBands.data.datasets[0].data = ecData;
+      chartBands.data.datasets[1].data = eiData;
+      chartBands.data.datasets[2].data = evData;
+      chartBands.data.datasets[3].data = efData;
+      chartBands.update();
+    }
+
+    /* Quiz Initialization */
+    const quizQuestions = [
+      {
+        q: "What physical condition must occur for an NMOS transistor to enter Saturation mode?",
+        options: [
+          "VGS < Vth",
+          "VDS ≥ VGS - Vth",
+          "VDS = 0 V",
+          "VBS > VGS"
+        ],
+        ans: 1,
+        exp: "Saturation occurs when VDS reaches or exceeds the overdrive voltage (Vov = VGS - Vth), causing the inversion channel to pinch off at the drain edge."
+      },
+      {
+        q: "Why is CMOS technology dominant over NMOS-only logic in modern VLSI chips?",
+        options: [
+          "CMOS dissipates almost zero static DC power in steady logic states",
+          "CMOS requires fewer transistors per gate",
+          "CMOS operates at 100x higher voltages",
+          "NMOS transistors cannot be fabricated on silicon"
+        ],
+        ans: 0,
+        exp: "In steady state ('0' or '1'), one of the complementary transistors is always OFF, leaving no direct path from VDD to GND and slashing static power dissipation."
+      },
+      {
+        q: "What effect does a negative substrate bias (VBS < 0) have on an NMOS threshold voltage?",
+        options: [
+          "Vth decreases, turning the transistor ON prematurely",
+          "Vth remains strictly constant",
+          "Vth increases due to expanded depletion charge (Body Effect)",
+          "The gate oxide breaks down immediately"
+        ],
+        ans: 2,
+        exp: "The Body Effect causes Vth to rise as reverse substrate bias increases the space-charge depletion layer, requiring a higher gate voltage to achieve strong inversion."
+      },
+      {
+        q: "In sub-7nm VLSI fabrication, why did the semiconductor industry transition from Planar MOSFETs to 3D FinFETs and GAA Nanosheets?",
+        options: [
+          "To suppress severe Short-Channel Effects (SCE) and DIBL by wrapping the gate around the channel",
+          "Planar MOSFETs are too expensive to cut",
+          "Copper wires cannot connect to planar gates",
+          "Silicon dioxide stopped existing"
+        ],
+        ans: 0,
+        exp: "As gate length L scaled down, the drain began usurping control of the channel barrier (DIBL). 3D FinFETs and GAA wrap the gate around 3 or 4 sides of the channel for superior electrostatic control."
+      },
+      {
+        q: "In the self-aligned gate fabrication process, what acts as the mask for the Source and Drain ion implantation?",
+        options: [
+          "A steel mechanical stencil",
+          "The patterned Polysilicon/Metal Gate itself",
+          "The wafer edge",
+          "The copper package leadframe"
+        ],
+        ans: 1,
+        exp: "The gate stack blocks ion implantation directly below it, ensuring the Source and Drain automatically align with perfect precision to the gate edges."
+      }
+    ];
+
+    let userQuizAnswers = {};
+
+    function initQuiz() {
+      const container = document.getElementById('quizContainer');
+      container.innerHTML = '';
+      userQuizAnswers = {};
+
+      quizQuestions.forEach((item, qIdx) => {
+        const qBox = document.createElement('div');
+        qBox.className = 'p-3 rounded-lg bg-slate-900 border border-slate-800 space-y-2';
+
+        const qTitle = document.createElement('div');
+        qTitle.className = 'font-semibold text-slate-200 text-xs flex items-start gap-1.5';
+        qTitle.innerHTML = '<span class="text-indigo-400 font-mono">Q' + (qIdx + 1) + '.</span> <span>' + item.q + '</span>';
+        qBox.appendChild(qTitle);
+
+        const optsDiv = document.createElement('div');
+        optsDiv.className = 'space-y-1.5 pt-1';
+
+        item.options.forEach((optText, optIdx) => {
+          const btn = document.createElement('button');
+          btn.className = 'quiz-opt-btn w-full text-left p-2 rounded text-[11px] bg-slate-950/70 border border-slate-800/80 hover:bg-slate-800 text-slate-300 transition flex items-center gap-2';
+          btn.innerHTML = '<span class="w-4 h-4 rounded-full border border-slate-600 flex items-center justify-center text-[10px]">' + String.fromCharCode(65 + optIdx) + '</span><span>' + optText + '</span>';
+          btn.onclick = () => selectQuizOption(qIdx, optIdx, qBox);
+          optsDiv.appendChild(btn);
+        });
+
+        qBox.appendChild(optsDiv);
+
+        const expDiv = document.createElement('div');
+        expDiv.id = 'quizExp' + qIdx;
+        expDiv.className = 'text-[10px] text-slate-400 p-2 rounded bg-slate-950 border border-slate-800/80 hidden';
+        qBox.appendChild(expDiv);
+
+        container.appendChild(qBox);
+      });
+
+      updateQuizScore();
+    }
+
+    function selectQuizOption(qIdx, optIdx, qBox) {
+      userQuizAnswers[qIdx] = optIdx;
+      const q = quizQuestions[qIdx];
+      const optButtons = qBox.querySelectorAll('.quiz-opt-btn');
+
+      optButtons.forEach((btn, idx) => {
+        btn.disabled = true;
+        if (idx === q.ans) {
+          btn.className = 'w-full text-left p-2 rounded text-[11px] bg-emerald-950/60 border border-emerald-600 text-emerald-200 flex items-center gap-2';
+        } else if (idx === optIdx && optIdx !== q.ans) {
+          btn.className = 'w-full text-left p-2 rounded text-[11px] bg-rose-950/60 border border-rose-600 text-rose-200 flex items-center gap-2';
+        }
+      });
+
+      const exp = document.getElementById('quizExp' + qIdx);
+      if (exp) {
+        exp.textContent = q.exp;
+        exp.classList.remove('hidden');
+      }
+
+      updateQuizScore();
+    }
+
+    function updateQuizScore() {
+      let correct = 0;
+      Object.keys(userQuizAnswers).forEach(qIdx => {
+        if (userQuizAnswers[qIdx] === quizQuestions[qIdx].ans) {
+          correct++;
+        }
+      });
+      document.getElementById('quizScore').textContent = 'Score: ' + correct + ' / ' + quizQuestions.length;
+    }
+
+    /* Event Listeners Setup */
+    function setupEventListeners() {
+      // Tab Navigation
+      document.querySelectorAll('#mainTabs .tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const tab = btn.dataset.tab;
+          appState.activeTab = tab;
+
+          document.querySelectorAll('#mainTabs .tab-btn').forEach(b => {
+            b.className = 'tab-btn px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 flex items-center gap-1.5';
+          });
+          btn.className = 'tab-btn px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all bg-indigo-600 text-white shadow-sm flex items-center gap-1.5';
+
+          document.querySelectorAll('.tab-panel').forEach(panel => panel.classList.add('hidden'));
+          const panelMap = {
+            mosfet: 'panelMosfet',
+            fabrication: 'panelFabrication',
+            fabtypes: 'panelFabTypes',
+            cmos: 'panelCmos',
+            energy: 'panelEnergy',
+            theory: 'panelTheory'
+          };
+          const targetPanel = document.getElementById(panelMap[tab]);
+          if (targetPanel) targetPanel.classList.remove('hidden');
+
+          updateSceneVisibility();
+          onWindowResize();
+        });
+      });
+
+      // Transistor Type Toggle
+      document.getElementById('btnSelectNMOS').addEventListener('click', () => {
+        appState.transistorType = 'NMOS';
+        document.getElementById('btnSelectNMOS').className = 'px-3 py-1 rounded-md bg-indigo-600 text-white transition';
+        document.getElementById('btnSelectPMOS').className = 'px-3 py-1 rounded-md text-slate-400 hover:text-slate-200 transition';
+        buildMosfetModel();
+        showToast('Switched to NMOS Transistor (Electrons)');
+      });
+
+      document.getElementById('btnSelectPMOS').addEventListener('click', () => {
+        appState.transistorType = 'PMOS';
+        document.getElementById('btnSelectPMOS').className = 'px-3 py-1 rounded-md bg-pink-600 text-white transition';
+        document.getElementById('btnSelectNMOS').className = 'px-3 py-1 rounded-md text-slate-400 hover:text-slate-200 transition';
+        buildMosfetModel();
+        showToast('Switched to PMOS Transistor (Holes)');
+      });
+
+      // 3D Visualizer Physics Overlays Checkboxes
+      document.getElementById('chkShowCarriers').addEventListener('change', (e) => {
+        appState.showCarriers = e.target.checked;
+        if (particleSystem) particleSystem.visible = appState.showCarriers;
+      });
+      document.getElementById('chkShowDepletion').addEventListener('change', (e) => {
+        appState.showDepletion = e.target.checked;
+        if (depletionMesh) depletionMesh.visible = appState.showDepletion;
+        if (fixedIonsGroup) fixedIonsGroup.visible = appState.showDepletion;
+      });
+      document.getElementById('chkShowFields').addEventListener('change', (e) => {
+        appState.showFields = e.target.checked;
+        if (fieldVectorsGroup) fieldVectorsGroup.visible = appState.showFields;
+      });
+      document.getElementById('chkShowCurrent').addEventListener('change', (e) => {
+        appState.showCurrent = e.target.checked;
+        if (currentFlowGroup) currentFlowGroup.visible = appState.showCurrent;
+      });
+
+      // Presets
+      document.querySelectorAll('.preset-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const preset = btn.dataset.preset;
+          if (preset === 'cutoff') {
+            document.getElementById('sliderVGS').value = '0.30';
+            document.getElementById('sliderVDS').value = '1.00';
+          } else if (preset === 'linear') {
+            document.getElementById('sliderVGS').value = '1.80';
+            document.getElementById('sliderVDS').value = '0.40';
+          } else if (preset === 'saturation') {
+            document.getElementById('sliderVGS').value = '1.40';
+            document.getElementById('sliderVDS').value = '1.60';
+          }
+          syncMosfetSliders();
+        });
+      });
+
+      // Sliders
+      const sVGS = document.getElementById('sliderVGS');
+      const sVDS = document.getElementById('sliderVDS');
+      const sVBS = document.getElementById('sliderVBS');
+      const sW = document.getElementById('sliderW');
+      const sL = document.getElementById('sliderL');
+
+      function syncMosfetSliders() {
+        appState.vgs = parseFloat(sVGS.value);
+        appState.vds = parseFloat(sVDS.value);
+        appState.vbs = parseFloat(sVBS.value);
+        appState.w = parseFloat(sW.value);
+        appState.l = parseFloat(sL.value);
+
+        document.getElementById('vgsVal').textContent = appState.vgs.toFixed(2) + ' V';
+        document.getElementById('vdsVal').textContent = appState.vds.toFixed(2) + ' V';
+        document.getElementById('vbsVal').textContent = appState.vbs.toFixed(2) + ' V';
+        document.getElementById('wVal').textContent = appState.w.toFixed(1) + ' μm';
+        document.getElementById('lVal').textContent = appState.l + ' nm';
+
+        updateMosfetChannelGeometry();
+      }
+
+      sVGS.addEventListener('input', syncMosfetSliders);
+      sVDS.addEventListener('input', syncMosfetSliders);
+      sVBS.addEventListener('input', syncMosfetSliders);
+      sW.addEventListener('input', syncMosfetSliders);
+      sL.addEventListener('input', syncMosfetSliders);
+
+      // Explode Slider
+      document.getElementById('sliderExplode').addEventListener('input', (e) => {
+        applyExplode(parseFloat(e.target.value));
+      });
+
+      // Cutaway Button
+      document.getElementById('btnCutaway').addEventListener('click', () => {
+        appState.cutawayEnabled = !appState.cutawayEnabled;
+        document.getElementById('cutawayLabel').textContent = appState.cutawayEnabled ? 'Cutaway ON' : 'Cutaway OFF';
+        applyCutaway();
+      });
+
+      // Camera Angle Buttons
+      document.getElementById('camIso').addEventListener('click', () => {
+        camera.position.set(16, 12, 20);
+        controls.target.set(0, 0, 0);
+        controls.update();
+      });
+      document.getElementById('camTop').addEventListener('click', () => {
+        camera.position.set(0, 26, 0.01);
+        controls.target.set(0, 0, 0);
+        controls.update();
+      });
+      document.getElementById('camSide').addEventListener('click', () => {
+        camera.position.set(0, 0, 26);
+        controls.target.set(0, 0, 0);
+        controls.update();
+      });
+      document.getElementById('btnResetView').addEventListener('click', () => {
+        camera.position.set(16, 12, 20);
+        controls.target.set(0, 0, 0);
+        controls.update();
+      });
+
+      // Industry App Selector
+      document.querySelectorAll('.app-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          selectIndustryApp(btn.dataset.app);
+        });
+      });
+
+      // CMOS Inverter Sliders & Buttons
+      const sVin = document.getElementById('sliderVin');
+      sVin.addEventListener('input', () => {
+        const v = parseFloat(sVin.value);
+        document.getElementById('vinVal').textContent = v.toFixed(2) + ' V';
+        updateCmosState(v);
+      });
+
+      document.getElementById('btnVinLow').addEventListener('click', () => {
+        sVin.value = '0.00';
+        document.getElementById('vinVal').textContent = '0.00 V (Logic \'0\')';
+        updateCmosState(0.0);
+      });
+      document.getElementById('btnVinMid').addEventListener('click', () => {
+        sVin.value = '0.90';
+        document.getElementById('vinVal').textContent = '0.90 V (Metastable)';
+        updateCmosState(0.9);
+      });
+      document.getElementById('btnVinHigh').addEventListener('click', () => {
+        sVin.value = '1.80';
+        document.getElementById('vinVal').textContent = '1.80 V (Logic \'1\')';
+        updateCmosState(1.8);
+      });
+
+      // 12-Step Fab Stepper Buttons
+      document.getElementById('btnFabPrev').addEventListener('click', () => {
+        if (appState.fabStep > 1) {
+          appState.fabStep--;
+          updateFabModelForStep(appState.fabStep);
+        }
+      });
+      document.getElementById('btnFabNext').addEventListener('click', () => {
+        if (appState.fabStep < appState.maxFabSteps) {
+          appState.fabStep++;
+          updateFabModelForStep(appState.fabStep);
+        }
+      });
+
+      // Energy Band Slider
+      const sBandVG = document.getElementById('sliderBandVG');
+      sBandVG.addEventListener('input', () => {
+        appState.bandVG = parseFloat(sBandVG.value);
+        document.getElementById('bandVGVal').textContent = appState.bandVG.toFixed(2) + ' V';
+        updateBandGeometry();
+      });
+
+      // Close Inspector
+      document.getElementById('closeInspector').addEventListener('click', () => {
+        document.getElementById('inspectorCard').classList.add('hidden');
+      });
+
+      // Quiz Reset
+      document.getElementById('btnResetQuiz').addEventListener('click', () => {
+        initQuiz();
+        showToast('Quiz reset! Test your knowledge.');
+      });
+    }
+
+    /* Initialize Application on DOM Ready */
+    window.addEventListener('DOMContentLoaded', () => {
+      initThree();
+      initCharts();
+      initQuiz();
+      setupEventListeners();
+      animate();
+    });
+  </script>
+</body>
+</html>
